@@ -2,6 +2,7 @@ package io.github.arcofs.mkexcavator.ui.drive
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.arcofs.mkexcavator.control.ControlSettings
 import io.github.arcofs.mkexcavator.control.ExcavatorControls
 import io.github.arcofs.mkexcavator.control.ExcavatorFunction
 import io.github.arcofs.mkexcavator.control.MachineController
@@ -27,6 +28,7 @@ class DriveViewModel(private val machine: MachineController, settings: SettingsR
     val guide: GuideStep? = null,
     val boxesSwapped: Boolean = false,
     val stopped: Boolean = false,
+    val settings: ControlSettings = ControlSettings(),
   ) {
     val canDrive: Boolean get() = link == Link.READY && guide == null && !stopped
   }
@@ -49,7 +51,12 @@ class DriveViewModel(private val machine: MachineController, settings: SettingsR
         }
       }
     }
-    viewModelScope.launch { settings.settings.collect { controls.settings = it } }
+    viewModelScope.launch {
+      settings.settings.collect { saved ->
+        controls.settings = saved
+        _state.update { it.copy(settings = saved) }
+      }
+    }
   }
 
   fun openGuide() = _state.update { it.copy(guide = GuideStep.SWITCH_ON) }

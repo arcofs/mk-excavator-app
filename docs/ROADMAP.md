@@ -8,14 +8,15 @@
 | **3. First motion** ✅ | Test-bench screen: Connect, hold-to-run buttons per box, STOP; `BleAdvertiserRadio` and `MachineController` | A motor on each module moves at the same time, driven by our code |
 | **4. Drive screen** ✅ | Landscape track levers and proportional joysticks (push forward lowers stick and boom), connect guide with an annotated photo of the boxes, swap boxes, safety rules | Drive and dig from one screen |
 | **5. Settings** ✅ | Settings screen saved with DataStore: dead zone, axis snap, speed curve, top speed and Reverse per function. Also a latching STOP. (Channel mapping stayed fixed: the 13112's wiring is known, and Swap boxes covers the module mix-up.) | The controls feel right and survive restarts |
-| **6. Polish** | Game controller support, app icon, signed release build | An installable release APK |
+| **6. Polish** (under way) | New look ✅: always-dark building-site theme, Barlow type, emergency-stop STOP, labelled stick bezels, excavator app icon. Still to do: signed release build, game controller support | An installable release APK |
 
 ## Safety rules (from Phase 3 on)
 
 - Releasing a control returns that motor to neutral.
 - If the app goes to the background or the screen locks, every motor goes neutral and the broadcast stops.
-- A STOP button is always visible. It latches (amber, "STOPPED · tap to resume"), and a control
-  held through the stop must be let go and pushed again before it works.
+- A STOP button is always visible. It latches (yellow and black hazard stripes, "STOPPED · tap to
+  resume", hazard tape along the screen edges), and a control held through the stop must be let
+  go and pushed again before it works.
 - A watchdog returns any motor to neutral if it hasn't been refreshed recently.
 - Backstop in the hardware: a box stops its motors as soon as the broadcast stops (tested by
   force-closing the app mid-drive; see `docs/protocol.md`).

@@ -21,7 +21,7 @@ fun MainNavigation() {
         entry<Settings> {
           SettingsScreen(onBack = { backStack.removeLastOrNull() }, onOpenTestBench = { backStack.add(TestBench) })
         }
-        entry<TestBench> { DebugScreen() }
+        entry<TestBench> { DebugScreen(onBack = { backStack.removeLastOrNull() }) }
       },
   )
 }

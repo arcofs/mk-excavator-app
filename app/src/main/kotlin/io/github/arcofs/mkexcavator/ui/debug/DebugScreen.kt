@@ -5,19 +5,21 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,8 +43,18 @@ import io.github.arcofs.mkexcavator.control.MachineController.Link
 import io.github.arcofs.mkexcavator.protocol.Channel
 import io.github.arcofs.mkexcavator.protocol.MotorSpeeds
 import io.github.arcofs.mkexcavator.radio.RadioState
+import io.github.arcofs.mkexcavator.ui.components.Eyebrow
+import io.github.arcofs.mkexcavator.ui.components.Panel
+import io.github.arcofs.mkexcavator.ui.components.ScreenTopBar
+import io.github.arcofs.mkexcavator.ui.components.StatusPill
+import io.github.arcofs.mkexcavator.ui.components.StopButton
 import io.github.arcofs.mkexcavator.ui.rememberWithAdvertisePermission
+import io.github.arcofs.mkexcavator.ui.theme.GoGreen
 import io.github.arcofs.mkexcavator.ui.theme.MKExcavatorTheme
+import io.github.arcofs.mkexcavator.ui.theme.MkText
+import io.github.arcofs.mkexcavator.ui.theme.SafetyYellow
+import io.github.arcofs.mkexcavator.ui.theme.SignalRedLight
+import io.github.arcofs.mkexcavator.ui.theme.Steel
 import kotlinx.coroutines.delay
 
 private const val ARM_BOX = 1
@@ -75,7 +86,7 @@ private val BOTH_BOX_CONTROLS =
   )
 
 @Composable
-fun DebugScreen(modifier: Modifier = Modifier) {
+fun DebugScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
   val app = LocalContext.current.applicationContext as MkExcavatorApp
   val viewModel: DebugViewModel = viewModel { DebugViewModel(app.machine, app.radio.state) }
   val machine by viewModel.machine.collectAsStateWithLifecycle()
@@ -93,11 +104,12 @@ fun DebugScreen(modifier: Modifier = Modifier) {
     onHold = { drives -> viewModel.hold(drives, speed) },
     onRelease = viewModel::release,
     onStop = viewModel::onStopButton,
+    onBack = onBack,
     modifier = modifier,
   )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** Hold-to-run buttons for each motor, for checking the wiring. STOP stays in view on the left. */
 @Composable
 internal fun DebugScreen(
   machine: MachineController.State,
@@ -109,48 +121,73 @@ internal fun DebugScreen(
   onHold: (List<Drive>) -> Unit,
   onRelease: (List<Drive>) -> Unit,
   onStop: () -> Unit,
+  onBack: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val connected = machine.link != Link.DISCONNECTED
-  Scaffold(
-    modifier = modifier,
-    topBar = { CenterAlignedTopAppBar(title = { Text("MK Excavator test bench") }) },
-  ) { innerPadding ->
-    Column(
-      modifier = Modifier.padding(innerPadding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-      Text(
-        "1. Switch on both battery boxes. 2. Tap Connect. 3. Short-press the track box's power button " +
-          "once: two quick flashes = Module 2. 4. Hold a button to run a motor; let go to stop.",
-        style = MaterialTheme.typography.bodyMedium,
-      )
-      Text("Link: ${machine.link.label()}    Radio: ${radio.label()}", style = MaterialTheme.typography.titleSmall)
-      Text(machine.speeds.summary(), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
-
-      Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Button(onClick = onConnect, enabled = !connected) { Text("Connect") }
-        OutlinedButton(onClick = onDisconnect, enabled = connected) { Text("Disconnect") }
+  Column(modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 20.dp)) {
+    ScreenTopBar(title = "Test bench", onBack = onBack)
+    Row(Modifier.weight(1f).padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+      Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Panel(Modifier.fillMaxWidth()) {
+          Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+              Text(
+                "Switch on both boxes, tap Connect, then short-press the track box's button once (two flashes = Module 2). " +
+                  "Hold a button to run a motor; let go to stop.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+              Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatusPill("Link: ${machine.link.label()}", machine.link.colour())
+                StatusPill("Radio: ${radio.label()}", radio.colour())
+              }
+              Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onConnect, enabled = !connected, modifier = Modifier.weight(1f)) { Text("Connect") }
+                OutlinedButton(onClick = onDisconnect, enabled = connected, modifier = Modifier.weight(1f)) { Text("Disconnect") }
+              }
+            }
+            Spacer(Modifier.width(20.dp))
+            StopButton(stopped = machine.stopped, onClick = onStop, size = 124.dp)
+          }
+        }
+        Panel(Modifier.fillMaxWidth()) {
+          Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Eyebrow("Speed", color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+              Text("$speed of ${MotorSpeeds.MAX_SPEED}", style = MaterialTheme.typography.labelMedium, color = SafetyYellow)
+            }
+            Slider(
+              value = speed.toFloat(),
+              onValueChange = { onSpeedChange(it.toInt()) },
+              valueRange = 1f..MotorSpeeds.MAX_SPEED.toFloat(),
+              steps = MotorSpeeds.MAX_SPEED - 2,
+            )
+            Eyebrow("Broadcasting", color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 8.dp))
+            for (module in 1..2) ChannelReadout(module, machine.speeds)
+          }
+        }
       }
+      Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ControlGroup("Arm box (Module 1)", ARM_CONTROLS, connected, onHold, onRelease)
+        ControlGroup("Track box (Module 2)", TRACK_CONTROLS, connected, onHold, onRelease)
+        ControlGroup("Both boxes at once", BOTH_BOX_CONTROLS, connected, onHold, onRelease)
+      }
+    }
+  }
+}
 
-      Text("Speed: $speed of ${MotorSpeeds.MAX_SPEED}", style = MaterialTheme.typography.titleSmall)
-      Slider(
-        value = speed.toFloat(),
-        onValueChange = { onSpeedChange(it.toInt()) },
-        valueRange = 1f..MotorSpeeds.MAX_SPEED.toFloat(),
-        steps = MotorSpeeds.MAX_SPEED - 2,
-      )
-
-      ControlGroup("Arm box (Module 1)", ARM_CONTROLS, connected, onHold, onRelease)
-      ControlGroup("Track box (Module 2)", TRACK_CONTROLS, connected, onHold, onRelease)
-      ControlGroup("Both boxes at once", BOTH_BOX_CONTROLS, connected, onHold, onRelease)
-
-      Button(
-        onClick = onStop,
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-        modifier = Modifier.fillMaxWidth().height(72.dp).padding(bottom = 16.dp),
-      ) {
-        Text(if (machine.stopped) "STOPPED: tap to resume" else "STOP", style = MaterialTheme.typography.headlineMedium)
+/** Each channel's speed being sent to [module], lit up when it isn't zero. */
+@Composable
+private fun ChannelReadout(module: Int, speeds: MotorSpeeds) {
+  Row(verticalAlignment = Alignment.CenterVertically) {
+    Text("Module $module", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(96.dp))
+    for (channel in Channel.entries) {
+      val speed = speeds[module, channel]
+      Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+        Text(channel.name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(6.dp))
+        Text("%+d".format(speed), style = MkText.readout, color = if (speed != 0) SafetyYellow else MaterialTheme.colorScheme.onSurface)
       }
     }
   }
@@ -164,14 +201,16 @@ private fun ControlGroup(
   onHold: (List<Drive>) -> Unit,
   onRelease: (List<Drive>) -> Unit,
 ) {
-  Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-    Text(title, style = MaterialTheme.typography.titleMedium)
-    for (control in controls) {
-      val reverse = control.drives.map { it.copy(direction = -it.direction) }
-      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(control.label, modifier = Modifier.width(170.dp))
-        HoldButton("−", enabled, onHold = { onHold(reverse) }, onRelease = { onRelease(reverse) })
-        HoldButton("+", enabled, onHold = { onHold(control.drives) }, onRelease = { onRelease(control.drives) })
+  Panel(Modifier.fillMaxWidth()) {
+    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Eyebrow(title, color = MaterialTheme.colorScheme.onSurface)
+      for (control in controls) {
+        val reverse = control.drives.map { it.copy(direction = -it.direction) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          Text(control.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+          HoldButton("−", enabled, onHold = { onHold(reverse) }, onRelease = { onRelease(reverse) })
+          HoldButton("+", enabled, onHold = { onHold(control.drives) }, onRelease = { onRelease(control.drives) })
+        }
       }
     }
   }
@@ -197,30 +236,48 @@ private fun HoldButton(text: String, enabled: Boolean, onHold: () -> Unit, onRel
     }
   }
 
-  Button(onClick = {}, enabled = enabled, interactionSource = interactions) { Text(text) }
+  FilledTonalButton(
+    onClick = {},
+    enabled = enabled,
+    interactionSource = interactions,
+    shape = RoundedCornerShape(12.dp),
+    modifier = Modifier.size(width = 64.dp, height = 44.dp),
+  ) {
+    Text(text, style = MaterialTheme.typography.titleLarge)
+  }
 }
 
 private fun Link.label() =
   when (this) {
-    Link.DISCONNECTED -> "not connected"
-    Link.CONNECTING -> "connecting (sending connect message)"
+    Link.DISCONNECTED -> "off"
+    Link.CONNECTING -> "connecting"
     Link.READY -> "ready"
+  }
+
+private fun Link.colour() =
+  when (this) {
+    Link.DISCONNECTED -> Steel
+    Link.CONNECTING -> SafetyYellow
+    Link.READY -> GoGreen
   }
 
 private fun RadioState.label() =
   when (this) {
     RadioState.Off -> "off"
     RadioState.Starting -> "starting"
-    RadioState.Broadcasting -> "broadcasting"
+    RadioState.Broadcasting -> "on air"
     is RadioState.Failed -> reason
   }
 
-private fun MotorSpeeds.summary() =
-  (1..2).joinToString("\n") { module ->
-    "Module $module: " + Channel.entries.joinToString("  ") { "${it.name} ${"%+d".format(this[module, it])}" }
+private fun RadioState.colour() =
+  when (this) {
+    RadioState.Off -> Steel
+    RadioState.Starting -> SafetyYellow
+    RadioState.Broadcasting -> GoGreen
+    is RadioState.Failed -> SignalRedLight
   }
 
-@Preview(showBackground = true, heightDp = 1100)
+@Preview(widthDp = 997, heightDp = 448)
 @Composable
 private fun DebugScreenPreview() {
   MKExcavatorTheme {
@@ -234,6 +291,7 @@ private fun DebugScreenPreview() {
       onHold = {},
       onRelease = {},
       onStop = {},
+      onBack = {},
     )
   }
 }

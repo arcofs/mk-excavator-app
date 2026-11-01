@@ -1,8 +1,10 @@
 package io.github.arcofs.mkexcavator
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +17,8 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    enableEdgeToEdge()
+    // The app is always dark, so the system bar icons are always light.
+    enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
     // The app stops every motor when it leaves the screen, so don't let the screen lock mid-drive.
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     setContent {

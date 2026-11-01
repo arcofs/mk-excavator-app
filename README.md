@@ -6,8 +6,8 @@ excavator's 4.0 battery/Bluetooth modules at the same time, from one screen.
 The stock app only drives one module at a time. Both modules listen to the same Bluetooth
 broadcast, and each broadcast has room for three modules, so this app fills in two at once.
 
-**Status:** Phases 0–5 done. The excavator drives and digs from one screen, with adjustable
-controls. Protocol notes are
+**Status:** Phases 0–5 done and Phase 6 under way: the excavator drives and digs from one screen,
+with adjustable controls, a dark building-site look and its own icon. Protocol notes are
 in [docs/protocol.md](docs/protocol.md). See [docs/ROADMAP.md](docs/ROADMAP.md) for what's next.
 
 ## Using it
@@ -19,14 +19,16 @@ in [docs/protocol.md](docs/protocol.md). See [docs/ROADMAP.md](docs/ROADMAP.md) 
    instead".
 3. Drive. Each track has a lever at the screen edge. The left joystick slews and moves the stick;
    the right joystick tilts the bucket and moves the boom. As on a real excavator, pushing a
-   joystick forward lowers the stick or boom. Speed follows how far you push.
+   joystick forward lowers the stick or boom. Speed follows how far you push. The rim of each
+   control says what each direction does, and that label lights up while it's driving.
 
 Letting go stops that motor and leaving the app disconnects. **STOP** stops everything and
-latches: tap it again to resume.
+latches (hazard stripes, and hazard tape along the screen edges): tap it again to resume. The
+**Arm 1 · Track 2** button under it swaps the boxes if the button press went to the wrong one.
 
-**Settings** (button on the drive screen) adjusts the dead zone, how much sideways drift a
+**Settings** (the gear on the drive screen) adjusts the dead zone, how much sideways drift a
 joystick ignores, the speed curve, and each function's top speed and direction. Changes are saved
-on the phone and apply straight away. The test bench is at the bottom of the settings page.
+on the phone and apply straight away. The test bench is linked from the settings page.
 
 ## Build and run
 
@@ -49,6 +51,14 @@ On Windows use `.\gradlew.bat` instead of `./gradlew`.
 | `protocol/` | Pure Kotlin, no Android code: builds and scrambles the Mould King messages, tested on the PC |
 | `docs/` | Roadmap and protocol notes |
 | `tools/` | PC helpers. `ble_sniff.py` prints the Mould King broadcasts it hears, live (needs `pip install -r tools/requirements.txt`). `derive_checksum.py` shows how the checksum was found |
+
+## Credits
+
+- [Barlow](https://github.com/jpt/barlow) typeface, SIL Open Font License 1.1.
+- Icons from [Material Symbols](https://github.com/google/material-design-icons), Apache License 2.0.
+- The excavator icon was drawn for this app.
+
+Both licence texts ship in the app, in `app/src/main/assets/licenses/`.
 
 ## Disclaimer
 

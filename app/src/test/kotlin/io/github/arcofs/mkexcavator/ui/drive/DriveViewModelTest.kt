@@ -163,6 +163,16 @@ class DriveViewModelTest {
   }
 
   @Test
+  fun savedSettingsReachTheScreenForItsLabelsAndDeadZoneRing() = runTest {
+    val (viewModel, _) = setUp()
+
+    settings.update { it.copy(deadZone = 0.3f, reversed = setOf(ExcavatorFunction.SLEW)) }
+
+    assertEquals(0.3f, viewModel.state.value.settings.deadZone)
+    assertEquals(setOf(ExcavatorFunction.SLEW), viewModel.state.value.settings.reversed)
+  }
+
+  @Test
   fun aJoystickIgnoresSidewaysDrift() = runTest {
     val (viewModel, machine) = setUp()
     connectThroughGuide(viewModel)

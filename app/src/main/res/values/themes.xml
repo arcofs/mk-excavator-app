@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.MKExcavator" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Dark from the first frame, so there is no white flash before Compose draws. -->
+    <style name="Theme.MKExcavator" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/graphite</item>
+        <item name="android:windowSplashScreenBackground">@color/graphite</item>
+    </style>
 </resources>

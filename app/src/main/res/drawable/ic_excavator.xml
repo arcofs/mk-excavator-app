@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's excavator mark, the same shape as the launcher icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="34dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="70">
+    <group android:translateY="-10">
+        <path
+            android:pathData="M32,62 H84 A8,8 0 0 1 84,78 H32 A8,8 0 0 1 32,62 Z M36,66.5 A3.5,3.5 0 1 0 36,73.5 A3.5,3.5 0 1 0 36,66.5 Z M58,66.5 A3.5,3.5 0 1 0 58,73.5 A3.5,3.5 0 1 0 58,66.5 Z M80,66.5 A3.5,3.5 0 1 0 80,73.5 A3.5,3.5 0 1 0 80,66.5 Z"
+            android:fillColor="@android:color/white"
+            android:fillType="evenOdd" />
+        <path
+            android:pathData="M46,55 H76 V63 H46 Z"
+            android:fillColor="@android:color/white" />
+        <path
+            android:pathData="M38,42 H90 A7,7 0 0 1 97,49 V50 A7,7 0 0 1 90,57 H38 A4,4 0 0 1 34,53 V46 A4,4 0 0 1 38,42 Z"
+            android:fillColor="@android:color/white" />
+        <path
+            android:pathData="M58,42 L60,18 Q60.4,14 64.5,14 H76 Q80,14 80,18 V42 Z M64,19 H75 V31 H63 Z"
+            android:fillColor="@android:color/white"
+            android:fillType="evenOdd" />
+        <path
+            android:pathData="M87,34 H89 A1,1 0 0 1 90,35 V43 H86 V35 A1,1 0 0 1 87,34 Z"
+            android:fillColor="@android:color/white" />
+        <path
+            android:pathData="M46,49 Q38,26 24,13"
+            android:strokeColor="@android:color/white"
+            android:strokeWidth="10"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M24,13 L10,44"
+            android:strokeColor="@android:color/white"
+            android:strokeWidth="7"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M5,41 L15,41 Q17,41 17.5,43 L21,60 Q21.5,62 19.5,62 L12,62 Q3,60 2.5,51 Q2.5,44 5,41 Z"
+            android:fillColor="@android:color/white" />
+    </group>
+</vector>

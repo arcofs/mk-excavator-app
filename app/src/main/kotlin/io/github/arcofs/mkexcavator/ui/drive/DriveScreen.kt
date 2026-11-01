@@ -1,43 +1,41 @@
 package io.github.arcofs.mkexcavator.ui.drive
 
 import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -48,11 +46,23 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.arcofs.mkexcavator.MkExcavatorApp
 import io.github.arcofs.mkexcavator.R
+import io.github.arcofs.mkexcavator.control.ControlSettings
 import io.github.arcofs.mkexcavator.control.ExcavatorFunction
 import io.github.arcofs.mkexcavator.control.MachineController.Link
+import io.github.arcofs.mkexcavator.ui.components.Eyebrow
+import io.github.arcofs.mkexcavator.ui.components.HazardTape
+import io.github.arcofs.mkexcavator.ui.components.Panel
+import io.github.arcofs.mkexcavator.ui.components.StatusPill
+import io.github.arcofs.mkexcavator.ui.components.StopButton
 import io.github.arcofs.mkexcavator.ui.drive.DriveViewModel.UiState
 import io.github.arcofs.mkexcavator.ui.rememberWithAdvertisePermission
+import io.github.arcofs.mkexcavator.ui.theme.GoGreen
+import io.github.arcofs.mkexcavator.ui.theme.Graphite
+import io.github.arcofs.mkexcavator.ui.theme.GraphiteRaised
 import io.github.arcofs.mkexcavator.ui.theme.MKExcavatorTheme
+import io.github.arcofs.mkexcavator.ui.theme.SafetyYellow
+import io.github.arcofs.mkexcavator.ui.theme.SignalRedLight
+import io.github.arcofs.mkexcavator.ui.theme.Steel
 
 @Composable
 fun DriveScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
@@ -103,92 +113,100 @@ internal fun DriveScreen(
   modifier: Modifier = Modifier,
 ) {
   val enabled = state.canDrive
-  Row(
-    modifier = modifier.fillMaxSize().safeDrawingPadding().padding(12.dp),
-    horizontalArrangement = Arrangement.spacedBy(16.dp),
-    verticalAlignment = Alignment.CenterVertically,
-  ) {
-    Lever(R.string.left_track, ExcavatorFunction.LEFT_TRACK, enabled, onMove, onRelease)
-    // As on a real excavator, pushing a joystick forward lowers the stick or boom; pulling back raises it.
-    Joystick(R.string.left_stick_label, ExcavatorFunction.SLEW, ExcavatorFunction.STICK, enabled, onMoveStick, onRelease, verticalSign = -1f)
-    Column(
-      modifier = Modifier.weight(0.2f).fillMaxHeight(),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+  Box(modifier.fillMaxSize().background(Brush.verticalGradient(listOf(GraphiteRaised, Graphite)))) {
+    Row(
+      modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp),
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Status(state)
-      StopButton(stopped = state.stopped, onClick = onStop)
+      Lever(R.string.left_track, ExcavatorFunction.LEFT_TRACK, state.settings, enabled, onMove, onRelease)
+      // As on a real excavator, pushing a joystick forward lowers the stick or boom; pulling back raises it.
+      Joystick(R.string.left_stick_title, ExcavatorFunction.SLEW, ExcavatorFunction.STICK, state.settings, enabled, onMoveStick, onRelease, verticalSign = -1f)
+      Console(state, onConnect, onDisconnect, onStop, onSwap, onOpenSettings, Modifier.weight(0.2f).fillMaxHeight())
+      Joystick(R.string.right_stick_title, ExcavatorFunction.BUCKET, ExcavatorFunction.BOOM, state.settings, enabled, onMoveStick, onRelease, verticalSign = -1f)
+      Lever(R.string.right_track, ExcavatorFunction.RIGHT_TRACK, state.settings, enabled, onMove, onRelease)
+    }
+    // Hazard tape along the top and bottom while STOP is latched.
+    if (state.stopped) {
+      HazardTape(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(8.dp))
+      HazardTape(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(8.dp))
+    }
+  }
+}
+
+/** The middle of the screen: name and settings, connection status, STOP, connect, and which box is which. */
+@Composable
+private fun Console(
+  state: UiState,
+  onConnect: () -> Unit,
+  onDisconnect: () -> Unit,
+  onStop: () -> Unit,
+  onSwap: () -> Unit,
+  onOpenSettings: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+      Icon(painterResource(R.drawable.ic_excavator), contentDescription = null, tint = SafetyYellow, modifier = Modifier.size(28.dp, 20.dp))
+      Spacer(Modifier.width(8.dp))
+      Eyebrow(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+      FilledTonalIconButton(onClick = onOpenSettings) {
+        Icon(painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
+      }
+    }
+    Status(state)
+    StopButton(stopped = state.stopped, onClick = onStop)
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
       if (state.link == Link.DISCONNECTED) {
-        Button(onClick = onConnect) { Text(stringResource(R.string.connect)) }
+        Button(onClick = onConnect, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+          Icon(painterResource(R.drawable.ic_bluetooth), contentDescription = null, modifier = Modifier.size(20.dp))
+          Spacer(Modifier.width(8.dp))
+          Text(stringResource(R.string.connect))
+        }
       } else {
-        OutlinedButton(onClick = onDisconnect) { Text(stringResource(R.string.disconnect)) }
+        OutlinedButton(onClick = onDisconnect, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+          Icon(painterResource(R.drawable.ic_bluetooth_disabled), contentDescription = null, modifier = Modifier.size(20.dp))
+          Spacer(Modifier.width(8.dp))
+          Text(stringResource(R.string.disconnect))
+        }
       }
-      TextButton(onClick = onSwap, enabled = enabled) { Text(stringResource(R.string.swap_boxes)) }
-      TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
-    }
-    Joystick(R.string.right_stick_label, ExcavatorFunction.BUCKET, ExcavatorFunction.BOOM, enabled, onMoveStick, onRelease, verticalSign = -1f)
-    Lever(R.string.right_track, ExcavatorFunction.RIGHT_TRACK, enabled, onMove, onRelease)
-  }
-}
-
-/** Red STOP; once pressed it latches and turns into a pulsing amber "STOPPED, tap to resume". */
-@Composable
-private fun StopButton(stopped: Boolean, onClick: () -> Unit) {
-  if (stopped) {
-    val pulse by
-      rememberInfiniteTransition(label = "stopped")
-        .animateFloat(1f, 1.08f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "stopped")
-    Button(
-      onClick = onClick,
-      shape = CircleShape,
-      colors = ButtonDefaults.buttonColors(containerColor = LATCHED_AMBER, contentColor = Color.Black),
-      contentPadding = PaddingValues(4.dp),
-      modifier =
-        Modifier.size(STOP_SIZE)
-          .graphicsLayer {
-            scaleX = pulse
-            scaleY = pulse
-          }
-          .border(4.dp, MaterialTheme.colorScheme.error, CircleShape),
-    ) {
-      Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.stop_latched), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(stringResource(R.string.stop_resume_hint), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
-      }
-    }
-  } else {
-    Button(
-      onClick = onClick,
-      shape = CircleShape,
-      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-      contentPadding = PaddingValues(4.dp),
-      modifier = Modifier.size(STOP_SIZE),
-    ) {
-      Text(stringResource(R.string.stop), style = MaterialTheme.typography.titleLarge)
+      ModuleChip(swapped = state.boxesSwapped, enabled = state.canDrive, onSwap = onSwap)
     }
   }
 }
 
-private val STOP_SIZE = 112.dp
-private val LATCHED_AMBER = Color(0xFFFFB300)
-
 @Composable
-private fun ColumnScope.Status(state: UiState) {
-  val status =
-    when {
-      state.link == Link.DISCONNECTED -> R.string.status_disconnected
-      state.link == Link.CONNECTING -> R.string.status_connecting
-      state.guide != null -> R.string.status_setting_up
-      state.stopped -> R.string.status_stopped
-      else -> R.string.status_ready
+private fun Status(state: UiState) {
+  when {
+    state.link == Link.DISCONNECTED -> StatusPill(stringResource(R.string.status_disconnected), Steel)
+    state.link == Link.CONNECTING -> StatusPill(stringResource(R.string.status_connecting), SafetyYellow, pulsing = true)
+    state.guide != null -> StatusPill(stringResource(R.string.status_setting_up), SafetyYellow, pulsing = true)
+    state.stopped -> StatusPill(stringResource(R.string.status_stopped), SignalRedLight, pulsing = true)
+    else -> StatusPill(stringResource(R.string.status_ready), GoGreen)
+  }
+}
+
+/** Which module each box is on; tap to swap them if the guide's button press went to the wrong box. */
+@Composable
+private fun ModuleChip(swapped: Boolean, enabled: Boolean, onSwap: () -> Unit) {
+  val content = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+  Surface(
+    onClick = onSwap,
+    enabled = enabled,
+    shape = CircleShape,
+    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    contentColor = content,
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+  ) {
+    Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+      Icon(
+        painterResource(R.drawable.ic_swap_horiz),
+        contentDescription = stringResource(R.string.swap_boxes),
+        tint = if (enabled) SafetyYellow else LocalContentColor.current,
+        modifier = Modifier.size(18.dp),
+      )
+      Spacer(Modifier.width(8.dp))
+      Eyebrow(stringResource(if (swapped) R.string.modules_swapped else R.string.modules_normal), color = LocalContentColor.current)
     }
-  Text(stringResource(status), style = MaterialTheme.typography.titleMedium)
-  if (state.canDrive) {
-    Text(
-      stringResource(if (state.boxesSwapped) R.string.modules_swapped else R.string.modules_normal),
-      style = MaterialTheme.typography.bodySmall,
-      textAlign = TextAlign.Center,
-    )
   }
 }
 
@@ -196,47 +214,83 @@ private fun ColumnScope.Status(state: UiState) {
 private fun RowScope.Lever(
   label: Int,
   function: ExcavatorFunction,
+  settings: ControlSettings,
   enabled: Boolean,
   onMove: (ExcavatorFunction, Float) -> Unit,
   onRelease: (ExcavatorFunction) -> Unit,
 ) {
-  Column(Modifier.weight(0.12f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-    Text(stringResource(label), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
-    ControlStick(
-      twoAxes = false,
-      enabled = enabled,
-      onMove = { _, y -> onMove(function, y) },
-      onRelease = { onRelease(function) },
-      modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp),
-    )
+  Panel(Modifier.weight(0.11f).fillMaxHeight()) {
+    Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 14.dp, bottom = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+      Eyebrow(stringResource(label), textAlign = TextAlign.Center)
+      ControlStick(
+        twoAxes = false,
+        enabled = enabled,
+        onMove = { _, y -> onMove(function, y) },
+        onRelease = { onRelease(function) },
+        labels = AxisLabels(up = directionLabel(function, positive = true, settings), down = directionLabel(function, positive = false, settings)),
+        deadZone = settings.deadZone,
+        modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 4.dp),
+      )
+    }
   }
 }
 
 @Composable
 private fun RowScope.Joystick(
-  label: Int,
+  title: Int,
   horizontal: ExcavatorFunction,
   vertical: ExcavatorFunction,
+  settings: ControlSettings,
   enabled: Boolean,
   onMoveStick: (horizontal: ExcavatorFunction, vertical: ExcavatorFunction, x: Float, y: Float) -> Unit,
   onRelease: (ExcavatorFunction) -> Unit,
   verticalSign: Float = 1f,
 ) {
-  Column(Modifier.weight(0.28f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-    Text(stringResource(label), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
-    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-      ControlStick(
-        twoAxes = true,
-        enabled = enabled,
-        onMove = { x, y -> onMoveStick(horizontal, vertical, x, y * verticalSign) },
-        onRelease = {
-          onRelease(horizontal)
-          onRelease(vertical)
-        },
-        modifier = Modifier.aspectRatio(1f, matchHeightConstraintsFirst = true),
-      )
+  Panel(Modifier.weight(0.29f).fillMaxHeight()) {
+    Column(Modifier.padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+      Eyebrow(stringResource(title))
+      Box(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
+        ControlStick(
+          twoAxes = true,
+          enabled = enabled,
+          onMove = { x, y -> onMoveStick(horizontal, vertical, x, y * verticalSign) },
+          onRelease = {
+            onRelease(horizontal)
+            onRelease(vertical)
+          },
+          labels =
+            AxisLabels(
+              up = directionLabel(vertical, positive = verticalSign > 0, settings),
+              down = directionLabel(vertical, positive = verticalSign < 0, settings),
+              left = directionLabel(horizontal, positive = false, settings),
+              right = directionLabel(horizontal, positive = true, settings),
+            ),
+          deadZone = settings.deadZone,
+          snapDegrees = settings.snapDegrees,
+          modifier = Modifier.aspectRatio(1f, matchHeightConstraintsFirst = true),
+        )
+      }
     }
   }
+}
+
+/**
+ * What driving [function] one way does: [positive] is forward, up, slew right or bucket open
+ * (see [ExcavatorFunction]), unless Reverse is on for it in the settings.
+ */
+@Composable
+private fun directionLabel(function: ExcavatorFunction, positive: Boolean, settings: ControlSettings): String {
+  val forward = positive != (function in settings.reversed)
+  return stringResource(
+    when (function) {
+      ExcavatorFunction.LEFT_TRACK,
+      ExcavatorFunction.RIGHT_TRACK -> if (forward) R.string.direction_forward else R.string.direction_reverse
+      ExcavatorFunction.SLEW -> if (forward) R.string.direction_right else R.string.direction_left
+      ExcavatorFunction.STICK,
+      ExcavatorFunction.BOOM -> if (forward) R.string.direction_up else R.string.direction_down
+      ExcavatorFunction.BUCKET -> if (forward) R.string.direction_dump else R.string.direction_curl
+    }
+  )
 }
 
 /** Full screen while driving; the bars come back with a swipe from the edge. */
@@ -251,12 +305,30 @@ private fun HideSystemBars() {
   }
 }
 
-@Preview(widthDp = 891, heightDp = 400, showBackground = true)
+@Preview(widthDp = 997, heightDp = 448)
 @Composable
 private fun DriveScreenPreview() {
   MKExcavatorTheme {
     DriveScreen(
       state = UiState(link = Link.READY),
+      onConnect = {},
+      onDisconnect = {},
+      onMove = { _, _ -> },
+      onMoveStick = { _, _, _, _ -> },
+      onRelease = {},
+      onStop = {},
+      onSwap = {},
+      onOpenSettings = {},
+    )
+  }
+}
+
+@Preview(widthDp = 997, heightDp = 448)
+@Composable
+private fun DriveScreenStoppedPreview() {
+  MKExcavatorTheme {
+    DriveScreen(
+      state = UiState(link = Link.READY, stopped = true),
       onConnect = {},
       onDisconnect = {},
       onMove = { _, _ -> },
