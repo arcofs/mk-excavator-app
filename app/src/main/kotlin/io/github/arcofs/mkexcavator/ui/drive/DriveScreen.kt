@@ -32,6 +32,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -67,11 +68,16 @@ import io.github.arcofs.mkexcavator.ui.theme.Steel
 @Composable
 fun DriveScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
   val app = LocalContext.current.applicationContext as MkExcavatorApp
-  val viewModel: DriveViewModel = viewModel { DriveViewModel(app.machine, app.settings) }
+  val viewModel: DriveViewModel = viewModel { DriveViewModel(app.machine, app.settings, app.gamepad) }
   val state by viewModel.state.collectAsStateWithLifecycle()
   val connect = rememberWithAdvertisePermission(viewModel::connect)
 
   HideSystemBars()
+  // A game controller only drives while this screen is showing.
+  DisposableEffect(app.gamepad) {
+    app.gamepad.capturing = true
+    onDispose { app.gamepad.capturing = false }
+  }
   DriveScreen(
     state = state,
     onConnect = viewModel::openGuide,
@@ -112,18 +118,40 @@ internal fun DriveScreen(
   onOpenSettings: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val enabled = state.canDrive
+  // Touch is locked while a game controller is connected; the sticks then show what it's doing.
+  val touch = Touch(enabled = state.canTouch, dimmed = !state.canDrive)
+  val pad = state.controller
   Box(modifier.fillMaxSize().background(Brush.verticalGradient(listOf(GraphiteRaised, Graphite)))) {
     Row(
       modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp),
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Lever(R.string.left_track, ExcavatorFunction.LEFT_TRACK, state.settings, enabled, onMove, onRelease)
+      Lever(R.string.left_track, ExcavatorFunction.LEFT_TRACK, state.settings, touch, pad?.leftTrack ?: 0f, onMove, onRelease)
       // As on a real excavator, pushing a joystick forward lowers the stick or boom; pulling back raises it.
-      Joystick(R.string.left_stick_title, ExcavatorFunction.SLEW, ExcavatorFunction.STICK, state.settings, enabled, onMoveStick, onRelease, verticalSign = -1f)
+      Joystick(
+        R.string.left_stick_title,
+        ExcavatorFunction.SLEW,
+        ExcavatorFunction.STICK,
+        state.settings,
+        touch,
+        Offset(pad?.leftX ?: 0f, pad?.leftY ?: 0f),
+        onMoveStick,
+        onRelease,
+        verticalSign = -1f,
+      )
       Console(state, onConnect, onDisconnect, onStop, onSwap, onOpenSettings, Modifier.weight(0.2f).fillMaxHeight())
-      Joystick(R.string.right_stick_title, ExcavatorFunction.BUCKET, ExcavatorFunction.BOOM, state.settings, enabled, onMoveStick, onRelease, verticalSign = -1f)
-      Lever(R.string.right_track, ExcavatorFunction.RIGHT_TRACK, state.settings, enabled, onMove, onRelease)
+      Joystick(
+        R.string.right_stick_title,
+        ExcavatorFunction.BUCKET,
+        ExcavatorFunction.BOOM,
+        state.settings,
+        touch,
+        Offset(pad?.rightX ?: 0f, pad?.rightY ?: 0f),
+        onMoveStick,
+        onRelease,
+        verticalSign = -1f,
+      )
+      Lever(R.string.right_track, ExcavatorFunction.RIGHT_TRACK, state.settings, touch, pad?.rightTrack ?: 0f, onMove, onRelease)
     }
     // Hazard tape along the top and bottom while STOP is latched.
     if (state.stopped) {
@@ -153,7 +181,10 @@ private fun Console(
         Icon(painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
       }
     }
-    Status(state)
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Status(state)
+      if (state.controller != null) ControllerChip(stopped = state.stopped)
+    }
     StopButton(stopped = state.stopped, onClick = onStop)
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
       if (state.link == Link.DISCONNECTED) {
@@ -185,6 +216,22 @@ private fun Status(state: UiState) {
   }
 }
 
+/** Shown while a game controller is connected; when stopped, it says how to resume from the controller. */
+@Composable
+private fun ControllerChip(stopped: Boolean) {
+  Row(
+    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape).padding(horizontal = 12.dp, vertical = 6.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Icon(painterResource(R.drawable.ic_gamepad), contentDescription = null, tint = SafetyYellow, modifier = Modifier.size(18.dp))
+    Spacer(Modifier.width(8.dp))
+    Eyebrow(
+      stringResource(if (stopped) R.string.controller_resume_hint else R.string.controller_connected),
+      color = MaterialTheme.colorScheme.onSurface,
+    )
+  }
+}
+
 /** Which module each box is on; tap to swap them if the guide's button press went to the wrong box. */
 @Composable
 private fun ModuleChip(swapped: Boolean, enabled: Boolean, onSwap: () -> Unit) {
@@ -210,12 +257,16 @@ private fun ModuleChip(swapped: Boolean, enabled: Boolean, onSwap: () -> Unit) {
   }
 }
 
+/** Whether the on-screen controls take touch, and whether they're greyed out. */
+private data class Touch(val enabled: Boolean, val dimmed: Boolean)
+
 @Composable
 private fun RowScope.Lever(
   label: Int,
   function: ExcavatorFunction,
   settings: ControlSettings,
-  enabled: Boolean,
+  touch: Touch,
+  mirror: Float,
   onMove: (ExcavatorFunction, Float) -> Unit,
   onRelease: (ExcavatorFunction) -> Unit,
 ) {
@@ -224,7 +275,9 @@ private fun RowScope.Lever(
       Eyebrow(stringResource(label), textAlign = TextAlign.Center)
       ControlStick(
         twoAxes = false,
-        enabled = enabled,
+        enabled = touch.enabled,
+        dimmed = touch.dimmed,
+        mirror = Offset(0f, mirror),
         onMove = { _, y -> onMove(function, y) },
         onRelease = { onRelease(function) },
         labels = AxisLabels(up = directionLabel(function, positive = true, settings), down = directionLabel(function, positive = false, settings)),
@@ -241,7 +294,8 @@ private fun RowScope.Joystick(
   horizontal: ExcavatorFunction,
   vertical: ExcavatorFunction,
   settings: ControlSettings,
-  enabled: Boolean,
+  touch: Touch,
+  mirror: Offset,
   onMoveStick: (horizontal: ExcavatorFunction, vertical: ExcavatorFunction, x: Float, y: Float) -> Unit,
   onRelease: (ExcavatorFunction) -> Unit,
   verticalSign: Float = 1f,
@@ -252,7 +306,9 @@ private fun RowScope.Joystick(
       Box(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
         ControlStick(
           twoAxes = true,
-          enabled = enabled,
+          enabled = touch.enabled,
+          dimmed = touch.dimmed,
+          mirror = mirror,
           onMove = { x, y -> onMoveStick(horizontal, vertical, x, y * verticalSign) },
           onRelease = {
             onRelease(horizontal)

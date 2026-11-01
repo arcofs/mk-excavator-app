@@ -151,7 +151,7 @@ internal fun SettingsScreen(
           modifier = Modifier.padding(start = 4.dp),
         )
       }
-      Column(Modifier.weight(1.15f)) {
+      Column(Modifier.weight(1.15f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Section(R.drawable.ic_speed, stringResource(R.string.settings_functions)) {
           Text(stringResource(R.string.settings_functions_help), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
           Column {
@@ -167,6 +167,7 @@ internal fun SettingsScreen(
             }
           }
         }
+        ControllerMap()
       }
     }
   }
@@ -285,6 +286,39 @@ private fun SpeedBars(value: Int, onValueChange: (Int) -> Unit, modifier: Modifi
         size = Size(width, height),
         cornerRadius = CornerRadius(3.dp.toPx()),
       )
+    }
+  }
+}
+
+/** What each part of a game controller does on the drive screen (see GamepadDriving). */
+@Composable
+private fun ControllerMap() {
+  val rows =
+    listOf(
+      R.string.controller_left_stick to R.string.controller_left_stick_does,
+      R.string.controller_right_stick to R.string.controller_right_stick_does,
+      R.string.controller_triggers to R.string.controller_triggers_do,
+      R.string.controller_bumpers to R.string.controller_bumpers_do,
+      R.string.controller_b to R.string.controller_b_does,
+      R.string.controller_menu to R.string.controller_menu_does,
+    )
+  Section(R.drawable.ic_gamepad, stringResource(R.string.settings_controller)) {
+    Text(stringResource(R.string.settings_controller_help), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+      for ((control, action) in rows) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Box(Modifier.width(150.dp)) {
+            Text(
+              stringResource(control),
+              style = MaterialTheme.typography.labelMedium,
+              modifier =
+                Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(8.dp))
+                  .padding(horizontal = 10.dp, vertical = 4.dp),
+            )
+          }
+          Text(stringResource(action), style = MaterialTheme.typography.bodyMedium)
+        }
+      }
     }
   }
 }

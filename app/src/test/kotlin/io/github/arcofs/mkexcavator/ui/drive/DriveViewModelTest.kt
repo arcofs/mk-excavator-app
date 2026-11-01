@@ -1,7 +1,10 @@
 package io.github.arcofs.mkexcavator.ui.drive
 
 import io.github.arcofs.mkexcavator.control.ExcavatorFunction
+import io.github.arcofs.mkexcavator.control.FakeGamepad
 import io.github.arcofs.mkexcavator.control.FakeRadio
+import io.github.arcofs.mkexcavator.control.GamepadButton
+import io.github.arcofs.mkexcavator.control.GamepadState
 import io.github.arcofs.mkexcavator.control.MachineController
 import io.github.arcofs.mkexcavator.control.MachineController.Link
 import io.github.arcofs.mkexcavator.protocol.Channel
@@ -10,6 +13,7 @@ import io.github.arcofs.mkexcavator.settings.FakeSettingsRepository
 import io.github.arcofs.mkexcavator.ui.drive.DriveViewModel.GuideStep
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -36,9 +40,20 @@ class DriveViewModelTest {
   @After
   fun tearDown() = Dispatchers.resetMain()
 
+  private val gamepad = FakeGamepad()
+
   private fun TestScope.setUp(): Pair<DriveViewModel, MachineController> {
     val machine = MachineController(radio, backgroundScope) { testScheduler.currentTime }
-    return DriveViewModel(machine, settings) to machine
+    // Ends with the test, taking the controller's refresh loop with it.
+    val scope = backgroundScope + UnconfinedTestDispatcher(testScheduler)
+    return DriveViewModel(machine, settings, gamepad, scope) to machine
+  }
+
+  private fun TestScope.readyToDrive(): Pair<DriveViewModel, MachineController> {
+    val (viewModel, machine) = setUp()
+    connectThroughGuide(viewModel)
+    viewModel.finishGuide(armBoxPressed = false)
+    return viewModel to machine
   }
 
   private fun TestScope.connectThroughGuide(viewModel: DriveViewModel) {
@@ -182,5 +197,70 @@ class DriveViewModelTest {
 
     assertEquals(0, machine.state.value.speeds[1, Channel.A])
     assertEquals(7, machine.state.value.speeds[1, Channel.D])
+  }
+
+  @Test
+  fun aControllerHeldDuringTheGuideWaitsToBeLetGoBeforeItDrives() = runTest {
+    val (viewModel, machine) = setUp()
+    gamepad.state.value = GamepadState()
+    connectThroughGuide(viewModel)
+
+    gamepad.state.value = GamepadState(leftTrigger = 1f)
+    viewModel.finishGuide(armBoxPressed = false)
+    advanceTimeBy(DriveViewModel.GAMEPAD_REFRESH_MS * 3)
+    runCurrent()
+    assertEquals(0, machine.state.value.speeds[2, Channel.C])
+
+    gamepad.state.value = GamepadState()
+    gamepad.state.value = GamepadState(leftTrigger = 1f)
+    assertEquals(7, machine.state.value.speeds[2, Channel.C])
+  }
+
+  @Test
+  fun aHeldControllerKeepsRunningPastTheWatchdog() = runTest {
+    val (_, machine) = readyToDrive()
+
+    gamepad.state.value = GamepadState(rightTrigger = 1f)
+    advanceTimeBy(MachineController.REFRESH_TIMEOUT_MS * 4)
+    runCurrent()
+
+    assertEquals(7, machine.state.value.speeds[2, Channel.A])
+  }
+
+  @Test
+  fun aControllerThatDisconnectsLeavesEverythingAtRest() = runTest {
+    val (_, machine) = readyToDrive()
+    gamepad.state.value = GamepadState(leftY = 1f, rightTrigger = 1f)
+
+    gamepad.state.value = null
+
+    assertEquals(MotorSpeeds.STOPPED, machine.state.value.speeds)
+  }
+
+  @Test
+  fun touchIsLockedWhileAControllerIsConnected() = runTest {
+    val (viewModel, machine) = readyToDrive()
+    gamepad.state.value = GamepadState()
+
+    viewModel.move(ExcavatorFunction.BOOM, 1f)
+    assertFalse(viewModel.state.value.canTouch)
+    assertEquals(0, machine.state.value.speeds[1, Channel.D])
+
+    gamepad.state.value = null
+    viewModel.move(ExcavatorFunction.BOOM, 1f)
+    assertEquals(7, machine.state.value.speeds[1, Channel.D])
+  }
+
+  @Test
+  fun theControllersStopLatchesAndOnlyMenuResumes() = runTest {
+    val (viewModel, _) = readyToDrive()
+    gamepad.state.value = GamepadState()
+
+    gamepad.presses.emit(GamepadButton.STOP)
+    gamepad.presses.emit(GamepadButton.STOP)
+    assertTrue(viewModel.state.value.stopped)
+
+    gamepad.presses.emit(GamepadButton.RESUME)
+    assertFalse(viewModel.state.value.stopped)
   }
 }

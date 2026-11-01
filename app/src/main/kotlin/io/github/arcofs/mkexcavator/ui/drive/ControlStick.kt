@@ -64,6 +64,8 @@ data class AxisLabels(val up: String = "", val down: String = "", val left: Stri
  *
  * Each stick follows only the finger that touched it, so several can be used at once.
  * [deadZone] and [snapDegrees] only change the drawing: the dead zone ring and which labels light up.
+ * [mirror] (x, y as for [onMove]) shows where a game controller's stick is while it isn't touched.
+ * [enabled] is whether it takes touch; [dimmed] greys it out, for when nothing can drive at all.
  */
 @Composable
 fun ControlStick(
@@ -75,6 +77,8 @@ fun ControlStick(
   labels: AxisLabels = AxisLabels(),
   deadZone: Float = 0f,
   snapDegrees: Float = 0f,
+  mirror: Offset = Offset.Zero,
+  dimmed: Boolean = !enabled,
 ) {
   var deflection by remember { mutableStateOf(Offset.Zero) }
   var held by remember { mutableStateOf(false) }
@@ -97,13 +101,17 @@ fun ControlStick(
     }
   }
 
+  // What to draw: the finger, or else the game controller (screen y points down).
+  val shown = if (held) deflection else Offset(mirror.x, -mirror.y)
+  val engaged = held || mirror != Offset.Zero
+
   // The directions that are actually driving something, after the dead zone and axis snap.
-  val (sideways, forward) = if (twoAxes) StickShaping.snapToAxis(deflection.x, -deflection.y, snapDegrees) else 0f to -deflection.y
-  fun driving(amount: Float) = held && amount != 0f && abs(amount) >= deadZone
+  val (sideways, forward) = if (twoAxes) StickShaping.snapToAxis(shown.x, -shown.y, snapDegrees) else 0f to -shown.y
+  fun driving(amount: Float) = engaged && amount != 0f && abs(amount) >= deadZone
   val active = Directions(up = driving(forward) && forward > 0, down = driving(forward) && forward < 0, left = driving(sideways) && sideways < 0, right = driving(sideways) && sideways > 0)
 
   Canvas(
-    modifier.alpha(if (enabled) 1f else 0.45f).pointerInput(enabled, twoAxes) {
+    modifier.alpha(if (dimmed) 0.45f else 1f).pointerInput(enabled, twoAxes) {
       if (!enabled) return@pointerInput
       awaitEachGesture {
         val down = awaitFirstDown()
@@ -150,7 +158,7 @@ fun ControlStick(
   ) {
     val geometry = StickGeometry(size, twoAxes, this)
     val text = Labels(measurer, labelStyle, labels, active)
-    if (twoAxes) drawJoystick(geometry, deflection, held, enabled, deadZone, text) else drawLever(geometry, deflection, held, enabled, deadZone, text)
+    if (twoAxes) drawJoystick(geometry, shown, engaged, !dimmed, deadZone, text) else drawLever(geometry, shown, engaged, !dimmed, deadZone, text)
   }
 }
 

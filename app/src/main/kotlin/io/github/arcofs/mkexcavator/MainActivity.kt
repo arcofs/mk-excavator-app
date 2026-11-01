@@ -1,7 +1,10 @@
 package io.github.arcofs.mkexcavator
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -25,6 +28,16 @@ class MainActivity : ComponentActivity() {
       MKExcavatorTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { MainNavigation() } }
     }
   }
+
+  // A game controller's sticks and buttons go to the gamepad first while it's driving.
+  override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean =
+    (application as MkExcavatorApp).gamepad.onMotion(event) || super.dispatchGenericMotionEvent(event)
+
+  // Lint flags calling up to ComponentActivity's override, but overriding it is the documented way
+  // to see key events before the views do.
+  @SuppressLint("RestrictedApi")
+  override fun dispatchKeyEvent(event: KeyEvent): Boolean =
+    (application as MkExcavatorApp).gamepad.onKey(event) || super.dispatchKeyEvent(event)
 
   override fun onStop() {
     super.onStop()

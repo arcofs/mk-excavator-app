@@ -29,6 +29,8 @@
     <string name="status_ready">Ready</string>
     <string name="status_stopped">Stopped</string>
     <string name="settings">Settings</string>
+    <string name="controller_connected">Controller</string>
+    <string name="controller_resume_hint">☰ to resume</string>
 
     <!-- Settings -->
     <string name="back">Back</string>
@@ -47,6 +49,20 @@
     <string name="test_bench">Test bench</string>
     <string name="test_bench_help">Run each motor on its own, to check the wiring.</string>
     <string name="about">Version %1$s · Not affiliated with Mould King</string>
+    <string name="settings_controller">Game controller</string>
+    <string name="settings_controller_help">Pair an Xbox or other Bluetooth controller in Android\'s Bluetooth settings. While it\'s connected the on-screen sticks follow it and ignore touch. The on-screen STOP still works.</string>
+    <string name="controller_left_stick">Left stick</string>
+    <string name="controller_left_stick_does">Slew and stick (push = down)</string>
+    <string name="controller_right_stick">Right stick</string>
+    <string name="controller_right_stick_does">Bucket and boom (push = down)</string>
+    <string name="controller_triggers">LT · RT</string>
+    <string name="controller_triggers_do">Left and right track forward</string>
+    <string name="controller_bumpers">Hold LB · RB</string>
+    <string name="controller_bumpers_do">That side\'s trigger reverses its track</string>
+    <string name="controller_b">B</string>
+    <string name="controller_b_does">STOP</string>
+    <string name="controller_menu">☰ Menu</string>
+    <string name="controller_menu_does">Resume after STOP</string>
     <string name="function_slew">Slew</string>
     <string name="function_stick">Stick</string>
     <string name="function_boom">Boom</string>
