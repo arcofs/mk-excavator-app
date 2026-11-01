@@ -28,8 +28,8 @@ latches (hazard stripes, and hazard tape along the screen edges): tap it again t
 
 **Game controller.** Pair an Xbox (or other Bluetooth) controller in Android's Bluetooth settings
 and it drives from the drive screen: the sticks work like the on-screen joysticks, each trigger
-runs its track forward and holding that side's bumper makes it reverse, **B** is STOP and **☰**
-resumes. While it's connected the on-screen sticks follow it and ignore touch; the on-screen STOP
+runs its track forward (harder is faster), each bumper runs its track in reverse at full speed
+(bumper and trigger together stop that track), **B** is STOP and **☰** resumes. While it's connected the on-screen sticks follow it and ignore touch; the on-screen STOP
 still works. If it disconnects, everything stops. The full button map is in Settings.
 
 **Settings** (the gear on the drive screen) adjusts the dead zone, how much sideways drift a

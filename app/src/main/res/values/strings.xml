@@ -57,8 +57,8 @@
     <string name="controller_right_stick_does">Bucket and boom (push = down)</string>
     <string name="controller_triggers">LT · RT</string>
     <string name="controller_triggers_do">Left and right track forward</string>
-    <string name="controller_bumpers">Hold LB · RB</string>
-    <string name="controller_bumpers_do">That side\'s trigger reverses its track</string>
+    <string name="controller_bumpers">LB · RB</string>
+    <string name="controller_bumpers_do">Left and right track reverse (full speed)</string>
     <string name="controller_b">B</string>
     <string name="controller_b_does">STOP</string>
     <string name="controller_menu">☰ Menu</string>

@@ -228,6 +228,17 @@ class DriveViewModelTest {
   }
 
   @Test
+  fun aHeldBumperKeepsReversingPastTheWatchdog() = runTest {
+    val (_, machine) = readyToDrive()
+
+    gamepad.state.value = GamepadState(leftBumper = true)
+    advanceTimeBy(MachineController.REFRESH_TIMEOUT_MS * 4)
+    runCurrent()
+
+    assertEquals(-7, machine.state.value.speeds[2, Channel.C])
+  }
+
+  @Test
   fun aControllerThatDisconnectsLeavesEverythingAtRest() = runTest {
     val (_, machine) = readyToDrive()
     gamepad.state.value = GamepadState(leftY = 1f, rightTrigger = 1f)

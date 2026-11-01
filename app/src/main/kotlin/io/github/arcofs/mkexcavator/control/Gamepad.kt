@@ -18,11 +18,20 @@ data class GamepadState(
   val leftBumper: Boolean = false,
   val rightBumper: Boolean = false,
 ) {
-  /** Each track runs forward on its trigger, or in reverse while that side's bumper is held. */
-  val leftTrack: Float get() = if (leftBumper) -leftTrigger else leftTrigger
-  val rightTrack: Float get() = if (rightBumper) -rightTrigger else rightTrigger
+  /** Each track runs forward on its trigger and in reverse, at full speed, on its bumper. */
+  val leftTrack: Float get() = track(leftTrigger, leftBumper)
+  val rightTrack: Float get() = track(rightTrigger, rightBumper)
 
-  val atRest: Boolean get() = leftX == 0f && leftY == 0f && rightX == 0f && rightY == 0f && leftTrigger == 0f && rightTrigger == 0f
+  val atRest: Boolean
+    get() = leftX == 0f && leftY == 0f && rightX == 0f && rightY == 0f && leftTrack == 0f && rightTrack == 0f
+
+  // Trigger and bumper together ask for both directions at once, so that track stops.
+  private fun track(trigger: Float, bumper: Boolean): Float =
+    when {
+      !bumper -> trigger
+      trigger > 0f -> 0f
+      else -> -1f
+    }
 }
 
 /** Controller buttons that act once when pressed, rather than while held. */
@@ -42,7 +51,8 @@ interface Gamepad {
 /**
  * Drives the excavator from a game controller laid out like the drive screen: the left stick
  * slews and moves the stick, the right stick tilts the bucket and moves the boom (pushing either
- * forward lowers, as on screen), and each trigger runs its track ([GamepadState.leftTrack]).
+ * forward lowers, as on screen), each trigger runs its track forward and each bumper runs it in
+ * reverse ([GamepadState.leftTrack]).
  * The settings apply exactly as they do to the on-screen controls.
  */
 class GamepadDriving(private val controls: ExcavatorControls) {

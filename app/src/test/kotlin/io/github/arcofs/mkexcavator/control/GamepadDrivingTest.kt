@@ -52,18 +52,29 @@ class GamepadDrivingTest {
   }
 
   @Test
-  fun holdingABumperRunsThatTrackInReverse() = runTest {
+  fun aBumperOnItsOwnRunsThatTrackInReverseAtFullSpeed() = runTest {
     val (gamepad, machine) = connected()
-    gamepad.apply(GamepadState(leftTrigger = 1f, leftBumper = true, rightTrigger = 1f), canMove = true)
+    gamepad.apply(GamepadState(leftBumper = true, rightTrigger = 1f), canMove = true)
     assertEquals(-7, machine.speed(2, Channel.C))
     assertEquals(7, machine.speed(2, Channel.A))
   }
 
   @Test
-  fun aBumperOnItsOwnMovesNothing() = runTest {
+  fun bumperAndTriggerTogetherStopThatTrack() = runTest {
     val (gamepad, machine) = connected()
-    gamepad.apply(GamepadState(leftBumper = true, rightBumper = true), canMove = true)
-    assertEquals(MotorSpeeds.STOPPED, machine.state.value.speeds)
+    gamepad.apply(GamepadState(leftBumper = true), canMove = true)
+
+    gamepad.apply(GamepadState(leftBumper = true, leftTrigger = 1f, rightBumper = true), canMove = true)
+
+    assertEquals(0, machine.speed(2, Channel.C))
+    assertEquals(-7, machine.speed(2, Channel.A))
+  }
+
+  @Test
+  fun aHeldBumperIsNotAtRest() {
+    assertTrue(GamepadState().atRest)
+    assertTrue(!GamepadState(rightBumper = true).atRest)
+    assertTrue(GamepadState(leftBumper = true, leftTrigger = 1f).atRest)
   }
 
   @Test
