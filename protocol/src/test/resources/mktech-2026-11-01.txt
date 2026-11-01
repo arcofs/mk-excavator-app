@@ -1,0 +1,38 @@
+# MK Tech 2.6.5 broadcasts: BLE manufacturer data for company 0xFFF0, 24 bytes.
+# Captured 2026-11-01 from a Pixel 8 Pro, heard on a Windows PC with tools/ble_sniff.py.
+#
+# Format: <label> | <24 bytes as hex>
+# Label is "idle", "connect", or space-separated channel settings <module><channel><sign><speed>.
+# Channels not listed are at rest. Sign: + = MK Tech stick up or left, - = stick down or right.
+# Speeds are decoded under the working hypothesis in docs/protocol.md; Phase 2 tests prove or
+# disprove it by reproducing these bytes exactly.
+
+idle      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 d9 72 a2 3c 6f 56 f4 84 15 16 17 18
+connect   | 6d b6 43 cf 7e 8f 47 11 48 bc cb 38 d1 7a 29 e6 33 c2 13 14 15 16 17 18
+
+1A+2      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 90 d9 72 a2 3c 6f 56 6a 61 15 16 17 18
+1A+3      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 80 d9 72 a2 3c 6f 56 a3 d4 15 16 17 18
+1A+6      | 6d b6 43 cf 7e 8f 47 11 98 bc cb d0 d9 72 a2 3c 6f 56 6c a6 15 16 17 18
+1A-2      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 10 d9 72 a2 3c 6f 56 77 e7 15 16 17 18
+1A-3      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 00 d9 72 a2 3c 6f 56 be 52 15 16 17 18
+1A-4      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 70 d9 72 a2 3c 6f 56 f2 43 15 16 17 18
+1A-6      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 50 d9 72 a2 3c 6f 56 71 20 15 16 17 18
+
+1B+4      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 3c d9 72 a2 3c 6f 56 6e 35 15 16 17 18
+1B-1      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 31 d9 72 a2 3c 6f 56 21 1b 15 16 17 18
+1B-6      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 36 d9 72 a2 3c 6f 56 39 dc 15 16 17 18
+
+1C+1      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 49 72 a2 3c 6f 56 e6 c3 15 16 17 18
+1C+4      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 19 72 a2 3c 6f 56 87 83 15 16 17 18
+1C+5      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 09 72 a2 3c 6f 56 37 c1 15 16 17 18
+1C+6      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 39 72 a2 3c 6f 56 e7 06 15 16 17 18
+1C-6      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 b9 72 a2 3c 6f 56 45 03 15 16 17 18
+
+1D+7      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 d6 72 a2 3c 6f 56 7d b9 15 16 17 18
+1D-6      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 df 72 a2 3c 6f 56 0e 9c 15 16 17 18
+
+2A+6      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 d9 92 a2 3c 6f 56 12 af 15 16 17 18
+3A+6      | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 d9 72 a2 dc 6f 56 55 8d 15 16 17 18
+
+1A+3 1B-3 | 6d b6 43 cf 7e 8f 47 11 98 bc cb 83 d9 72 a2 3c 6f 56 cd 7c 15 16 17 18
+1C+3 1D+4 | 6d b6 43 cf 7e 8f 47 11 98 bc cb 30 65 72 a2 3c 6f 56 72 77 15 16 17 18

@@ -18,3 +18,10 @@
 ```
 
 Test phone: Pixel 8 Pro, Android 17, connected over USB.
+
+To see what any app broadcasts to the boxes, listen from the PC (Windows Bluetooth, needs `bleak`):
+
+```powershell
+python -m venv .venv; .\.venv\Scripts\pip install -r tools\requirements.txt
+.\.venv\Scripts\python tools\ble_sniff.py --seconds 300 --log sniff.log
+```

@@ -6,7 +6,9 @@ excavator's 4.0 battery/Bluetooth modules at the same time, from one screen.
 The stock app only drives one module at a time. Both modules listen to the same Bluetooth
 broadcast, and each broadcast has room for three modules, so this app fills in two at once.
 
-**Status:** Phase 0, project foundations. See [docs/ROADMAP.md](docs/ROADMAP.md).
+**Status:** Phases 0–1 done: the project builds, and the stock app's broadcasts and the
+excavator's channel map are worked out in [docs/protocol.md](docs/protocol.md). Next is Phase 2,
+the protocol library. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Build and run
 
@@ -28,6 +30,7 @@ On Windows use `.\gradlew.bat` instead of `./gradlew`.
 | `app/` | The Android app: Compose UI, Bluetooth broadcaster, settings |
 | `protocol/` | Pure Kotlin, no Android code: builds and scrambles the Mould King messages, tested on the PC |
 | `docs/` | Roadmap and protocol notes |
+| `tools/` | PC helpers. `ble_sniff.py` prints the Mould King broadcasts it hears, live (needs `pip install -r tools/requirements.txt`) |
 
 ## Disclaimer
 

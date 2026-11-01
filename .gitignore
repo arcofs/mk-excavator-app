@@ -1,6 +1,9 @@
 *.iml
 .gradle
 .kotlin
+.venv/
+__pycache__/
+*.log
 /local.properties
 /.idea/caches
 /.idea/libraries

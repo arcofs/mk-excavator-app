@@ -2,8 +2,8 @@
 
 | Phase | Work | Done when |
 |---|---|---|
-| **0. Foundations** | Project from the official template, `:protocol` module, private GitHub repo, CI | The starter app runs on the Pixel and CI passes |
-| **1. Record the stock app** | Bluetooth HCI snoop log of the stock MK Tech app following a scripted set of moves; extract the broadcasts | A table of "control used → bytes broadcast" |
+| **0. Foundations** ✅ | Project from the official template, `:protocol` module, private GitHub repo, CI | The starter app runs on the Pixel and CI passes |
+| **1. Record the stock app** ✅ | Listen to the stock MK Tech app's broadcasts from the PC (`tools/ble_sniff.py`) while driving scripted moves, and map the channels on the machine | A table of "control used → bytes broadcast": [protocol.md](protocol.md) |
 | **2. Protocol library** | Message builder and scrambler in `:protocol`, written test-first | Unit tests reproduce the recorded bytes exactly |
 | **3. First motion** | Debug screen: Connect, one button per module, STOP | A motor on each module moves at the same time, driven by our code |
 | **4. Drive screen** | Landscape controls, safety rules, connect guide | Drive and dig from one screen |
