@@ -33,3 +33,4 @@ plugins {
 rootProject.name = "MK Excavator"
 
 include(":app")
+include(":protocol")
