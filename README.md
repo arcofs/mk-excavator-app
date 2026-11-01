@@ -6,13 +6,21 @@ excavator's 4.0 battery/Bluetooth modules at the same time, from one screen.
 The stock app only drives one module at a time. Both modules listen to the same Bluetooth
 broadcast, and each broadcast has room for three modules, so this app fills in two at once.
 
-**Status:** Phases 0–3 done. The app's test bench drives both boxes at once on the real
-machine. Protocol notes are in [docs/protocol.md](docs/protocol.md). Next is Phase 4: the real
-drive screen. See [docs/ROADMAP.md](docs/ROADMAP.md).
+**Status:** Phases 0–4 done. The excavator drives and digs from one screen. Protocol notes are
+in [docs/protocol.md](docs/protocol.md). See [docs/ROADMAP.md](docs/ROADMAP.md) for what's next.
 
-**Using it:** switch on both boxes, open the app and tap **Connect**. Then short-press the
-**track box's** power button once, so it gives two quick flashes (Module 2). Boxes forget this
-when switched off, so it's needed on every power-up.
+## Using it
+
+1. Switch on both battery boxes, open the app and tap **Connect**.
+2. The guide shows which box is which. Short-press the **track box's** power button once, so it
+   flashes twice (Module 2), then tap **Done**. Boxes forget this when switched off, so it's
+   needed on every power-up. If you press the arm box by mistake, tap "The arm box flashes twice
+   instead".
+3. Drive. Each track has a lever at the screen edge. The left joystick slews and moves the stick;
+   the right joystick tilts the bucket and moves the boom. As on a real excavator, pushing a
+   joystick forward lowers the stick or boom. Speed follows how far you push.
+
+Letting go stops that motor, **STOP** stops everything, and leaving the app disconnects.
 
 ## Build and run
 

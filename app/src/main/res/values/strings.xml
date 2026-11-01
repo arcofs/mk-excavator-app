@@ -1,3 +1,35 @@
 <resources>
     <string name="app_name">MK Excavator</string>
+
+    <!-- Drive screen -->
+    <string name="left_track">Left track</string>
+    <string name="right_track">Right track</string>
+    <string name="left_stick_label">Slew ◀ ▶\nStick (push = down)</string>
+    <string name="right_stick_label">Bucket ◀ ▶\nBoom (push = down)</string>
+    <string name="stop">STOP</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="swap_boxes">Swap boxes</string>
+    <string name="test_bench">Test bench</string>
+    <string name="status_disconnected">Not connected</string>
+    <string name="status_connecting">Connecting…</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_setting_up">Setting up…</string>
+    <string name="modules_normal">Arm box: module 1\nTrack box: module 2</string>
+    <string name="modules_swapped">Arm box: module 2\nTrack box: module 1</string>
+
+    <!-- Connect guide -->
+    <string name="guide_switch_on_title">Switch on both boxes</string>
+    <string name="guide_switch_on_body">Open the lid at the back. Press the power button on each grey box so both lights are on.</string>
+    <string name="guide_connecting_title">Connecting…</string>
+    <string name="guide_connecting_body">Sending the connect signal to both boxes. This takes a couple of seconds.</string>
+    <string name="guide_press_title">Press the track box button once</string>
+    <string name="guide_press_body">Short-press the green power button on the track box (right). Its light should flash twice. Leave the arm box alone.\n\nIf the track box already flashes twice, don\'t press it again.</string>
+    <string name="guide_done">Done: track box flashes twice</string>
+    <string name="guide_arm_box_instead">The arm box flashes twice instead</string>
+    <string name="guide_cancel">Cancel</string>
+    <string name="guide_photo_description">The two battery boxes under the lid at the back of the excavator</string>
+    <string name="arm_box">Arm box</string>
+    <string name="track_box">Track box</string>
+    <string name="press_once">Press once</string>
 </resources>

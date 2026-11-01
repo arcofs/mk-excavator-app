@@ -5,14 +5,19 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import io.github.arcofs.mkexcavator.ui.debug.DebugScreen
+import io.github.arcofs.mkexcavator.ui.drive.DriveScreen
 
 @Composable
 fun MainNavigation() {
-  val backStack = rememberNavBackStack(TestBench)
+  val backStack = rememberNavBackStack(Drive)
 
   NavDisplay(
     backStack = backStack,
     onBack = { backStack.removeLastOrNull() },
-    entryProvider = entryProvider { entry<TestBench> { DebugScreen() } },
+    entryProvider =
+      entryProvider {
+        entry<Drive> { DriveScreen(onOpenTestBench = { backStack.add(TestBench) }) }
+        entry<TestBench> { DebugScreen() }
+      },
   )
 }

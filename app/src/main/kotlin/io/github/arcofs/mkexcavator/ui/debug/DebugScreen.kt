@@ -1,9 +1,5 @@
 package io.github.arcofs.mkexcavator.ui.debug
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -38,16 +34,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.arcofs.mkexcavator.MkExcavatorApp
 import io.github.arcofs.mkexcavator.control.MachineController
 import io.github.arcofs.mkexcavator.control.MachineController.Link
 import io.github.arcofs.mkexcavator.protocol.Channel
 import io.github.arcofs.mkexcavator.protocol.MotorSpeeds
-import io.github.arcofs.mkexcavator.radio.BleAdvertiserRadio
 import io.github.arcofs.mkexcavator.radio.RadioState
+import io.github.arcofs.mkexcavator.ui.rememberWithAdvertisePermission
 import io.github.arcofs.mkexcavator.ui.theme.MKExcavatorTheme
 import kotlinx.coroutines.delay
 
@@ -81,31 +76,19 @@ private val BOTH_BOX_CONTROLS =
 
 @Composable
 fun DebugScreen(modifier: Modifier = Modifier) {
-  val context = LocalContext.current
-  val viewModel: DebugViewModel = viewModel { DebugViewModel(BleAdvertiserRadio(context.applicationContext)) }
+  val app = LocalContext.current.applicationContext as MkExcavatorApp
+  val viewModel: DebugViewModel = viewModel { DebugViewModel(app.machine, app.radio.state) }
   val machine by viewModel.machine.collectAsStateWithLifecycle()
   val radio by viewModel.radioState.collectAsStateWithLifecycle()
   var speed by rememberSaveable { mutableIntStateOf(4) }
-
-  LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.onAppHidden() }
-
-  val permission =
-    rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-      if (granted) viewModel.connect()
-    }
+  val connect = rememberWithAdvertisePermission(viewModel::connect)
 
   DebugScreen(
     machine = machine,
     radio = radio,
     speed = speed,
     onSpeedChange = { speed = it },
-    onConnect = {
-      if (context.checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED) {
-        viewModel.connect()
-      } else {
-        permission.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
-      }
-    },
+    onConnect = connect,
     onDisconnect = viewModel::disconnect,
     onHold = { drives -> viewModel.hold(drives, speed) },
     onRelease = viewModel::release,

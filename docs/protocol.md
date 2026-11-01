@@ -139,8 +139,11 @@ are MK Tech's stick directions.
 | Track box (2) | B, D | not used | | |
 
 Observed directly: bucket open on A up, stick up on B right, slew left on C up, boom down on D
-right, right track forward on A up, left track forward on C up. The opposite directions are
-inferred.
+right, right track forward on A up, left track forward on C up. Every function, in both
+directions, was then confirmed by driving with the Phase 4 drive screen (2026-11-01).
+
+When judging left/right and forward/back, face the machine the way the tracks point, not the cab:
+with the cab slewed round, both look reversed.
 
 With both boxes left on Module 1, one channel drives both boxes. A moves the bucket **and** the
 right track, and C moves the slew **and** the left track. That is the "mixed up channels" effect

@@ -22,4 +22,10 @@ class MainActivity : ComponentActivity() {
       MKExcavatorTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { MainNavigation() } }
     }
   }
+
+  override fun onStop() {
+    super.onStop()
+    // Safety rule: nothing keeps running while the app isn't on screen. A rotation isn't leaving.
+    if (!isChangingConfigurations) (application as MkExcavatorApp).machine.disconnect()
+  }
 }

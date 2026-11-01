@@ -1,18 +1,14 @@
 package io.github.arcofs.mkexcavator.ui.debug
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import io.github.arcofs.mkexcavator.control.MachineController
 import io.github.arcofs.mkexcavator.protocol.Channel
-import io.github.arcofs.mkexcavator.radio.Radio
 import io.github.arcofs.mkexcavator.radio.RadioState
 import kotlinx.coroutines.flow.StateFlow
 
-class DebugViewModel(private val radio: Radio) : ViewModel() {
-  private val controller = MachineController(radio, viewModelScope)
-
+class DebugViewModel(private val controller: MachineController, radioState: StateFlow<RadioState>) : ViewModel() {
   val machine: StateFlow<MachineController.State> = controller.state
-  val radioState: StateFlow<RadioState> = radio.state
+  val radioState: StateFlow<RadioState> = radioState
 
   fun connect() = controller.connect()
 
@@ -23,11 +19,6 @@ class DebugViewModel(private val radio: Radio) : ViewModel() {
   fun release(drives: List<Drive>) = drives.forEach { controller.release(it.module, it.channel) }
 
   fun stopAll() = controller.stopAll()
-
-  /** Safety rule: nothing keeps running while the app isn't on screen. */
-  fun onAppHidden() = controller.disconnect()
-
-  override fun onCleared() = radio.stop()
 }
 
 /** One motor to run while a button is held: [direction] is +1 or -1, scaled by the chosen speed. */

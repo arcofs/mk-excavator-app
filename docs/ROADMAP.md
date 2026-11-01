@@ -6,7 +6,7 @@
 | **1. Record the stock app** ✅ | Listen to the stock MK Tech app's broadcasts from the PC (`tools/ble_sniff.py`) while driving scripted moves, and map the channels on the machine | A table of "control used → bytes broadcast": [protocol.md](protocol.md) |
 | **2. Protocol library** ✅ | `Mk4Message` and `MotorSpeeds` in `:protocol`, written test-first; checksum found with `tools/derive_checksum.py` | Unit tests reproduce the recorded bytes exactly |
 | **3. First motion** ✅ | Test-bench screen: Connect, hold-to-run buttons per box, STOP; `BleAdvertiserRadio` and `MachineController` | A motor on each module moves at the same time, driven by our code |
-| **4. Drive screen** | Landscape controls, safety rules, connect guide | Drive and dig from one screen |
+| **4. Drive screen** ✅ | Landscape track levers and proportional joysticks (push forward lowers stick and boom), connect guide with an annotated photo of the boxes, swap boxes, safety rules | Drive and dig from one screen |
 | **5. Settings** | Channel mapping, direction flip, speed caps, saved with DataStore | The mapping matches the machine and survives restarts |
 | **6. Polish** | Game controller support, app icon, signed release build | An installable release APK |
 

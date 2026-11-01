@@ -4,10 +4,7 @@ import io.github.arcofs.mkexcavator.control.MachineController.Link
 import io.github.arcofs.mkexcavator.protocol.Channel
 import io.github.arcofs.mkexcavator.protocol.Mk4Message
 import io.github.arcofs.mkexcavator.protocol.MotorSpeeds
-import io.github.arcofs.mkexcavator.radio.Radio
-import io.github.arcofs.mkexcavator.radio.RadioState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -18,24 +15,6 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MachineControllerTest {
-  private class FakeRadio : Radio {
-    override val state = MutableStateFlow<RadioState>(RadioState.Off)
-    val sent = mutableListOf<List<Byte>>()
-    var stopped = 0
-
-    val last: List<Byte> get() = sent.last()
-
-    override fun broadcast(payload: ByteArray) {
-      sent += payload.toList()
-      state.value = RadioState.Broadcasting
-    }
-
-    override fun stop() {
-      stopped++
-      state.value = RadioState.Off
-    }
-  }
-
   private val radio = FakeRadio()
 
   private fun TestScope.controller() = MachineController(radio, backgroundScope) { testScheduler.currentTime }

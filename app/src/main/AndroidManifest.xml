@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- The boxes are driven by BLE advertisements only: no scanning, no connections. -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
     <application
+        android:name=".MkExcavatorApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
@@ -14,9 +16,13 @@
         android:supportsRtl="true"
         android:windowSoftInputMode="adjustResize"
         android:theme="@style/Theme.MKExcavator">
+        <!-- A two-thumb controller: landscape only, either way up. Phones honour this; Android 16+
+             ignores it on large screens, where the landscape layout still fits. -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            tools:ignore="DiscouragedApi">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
