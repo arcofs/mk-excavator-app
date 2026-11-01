@@ -1,6 +1,7 @@
 package io.github.arcofs.mkexcavator
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,6 +16,8 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
 
     enableEdgeToEdge()
+    // The app stops every motor when it leaves the screen, so don't let the screen lock mid-drive.
+    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     setContent {
       MKExcavatorTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { MainNavigation() } }
     }

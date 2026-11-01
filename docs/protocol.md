@@ -9,8 +9,8 @@ Status:
 - The layout and channel map are **confirmed on the machine**.
 - The checksum is **identified**. `Mk4Message` in `:protocol` reproduces every captured message
   byte for byte, and its tests check that.
-- Still to confirm on the machine (Phase 3): channels we never captured, such as Module 2's C,
-  and the speed each value actually gives.
+- Our own app has driven both boxes at once (Phase 3). Still to check: the speed each value
+  actually gives.
 
 ## Transport
 
@@ -102,11 +102,16 @@ The connect message has no adjustable content, so it's sent exactly as captured.
 
 ## Module numbers
 
-- Every box is **Module 1** after power-on.
-- While MK Tech is connected, a **short press of a box's power button** moves it to the next
-  module: two quick flashes for Module 2, three for Module 3. This resets to Module 1 when the
-  box is switched off.
+- Every box is **Module 1** after power-on. Seen 2026-11-01: the track box was back on Module 1
+  after being switched off and on.
+- A **short press of a box's power button** moves it to the next module: two quick flashes for
+  Module 2, three for Module 3, then back to one flash for Module 1.
+- The press **only works while the box is hearing control messages**. During the connect message
+  it does nothing. That's why our app switches to control messages 2 seconds after connecting.
 - A box obeys only its own module's two bytes.
+- **No message assigns a module.** MK Tech's manual relies on the button too, and the boxes never
+  transmit, so the phone can't address one box apart from the other. Assigning the module is a
+  one-press step on each power-up that the app has to guide the user through.
 
 ## Connecting
 
@@ -115,6 +120,8 @@ The connect message has no adjustable content, so it's sent exactly as captured.
   rest that's the idle message.
 - The manual says a box must be powered on before the app connects, so a box presumably only
   accepts the connect message during a short window after power-on. Still to measure.
+- Our app sends the connect message for 2 seconds, then control messages. On 2026-11-01, two
+  freshly powered boxes connected that way, and the track box then took its button press.
 
 ## 13112 channel map
 
@@ -139,10 +146,14 @@ With both boxes left on Module 1, one channel drives both boxes. A moves the buc
 right track, and C moves the slew **and** the left track. That is the "mixed up channels" effect
 seen in MK Tech before the track box was moved to Module 2.
 
+**Driven by our own app** (Phase 3 test bench, 2026-11-01, arm box on Module 1, track box on
+Module 2): right track on Module 2 A, left track on Module 2 C (never captured from MK Tech), and
+bucket plus right track from **one message** carrying Module 1 A and Module 2 A.
+
 ## Open questions
 
-- Channels we never captured (Module 2's B, C and D, and Module 3's B, C and D). They follow the
-  same layout and checksum, so they should work, but they still need confirming on the machine.
+- Channels never captured or driven: Module 2's B and D, and Module 3's B, C and D. They follow
+  the same layout and checksum, so they should work.
 - How long the connect message must be sent, and whether a box can join later.
 - What a box does when messages stop: does it hold its last command or stop? This matters for
   the safety rules.

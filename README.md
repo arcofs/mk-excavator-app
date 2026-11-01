@@ -6,10 +6,13 @@ excavator's 4.0 battery/Bluetooth modules at the same time, from one screen.
 The stock app only drives one module at a time. Both modules listen to the same Bluetooth
 broadcast, and each broadcast has room for three modules, so this app fills in two at once.
 
-**Status:** Phases 0–2 done. The stock app's broadcasts and the excavator's channel map are
-worked out in [docs/protocol.md](docs/protocol.md), and `:protocol` builds messages that match
-the stock app's byte for byte. Next is Phase 3: first motion from our own app. See
-[docs/ROADMAP.md](docs/ROADMAP.md).
+**Status:** Phases 0–3 done. The app's test bench drives both boxes at once on the real
+machine. Protocol notes are in [docs/protocol.md](docs/protocol.md). Next is Phase 4: the real
+drive screen. See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+**Using it:** switch on both boxes, open the app and tap **Connect**. Then short-press the
+**track box's** power button once, so it gives two quick flashes (Module 2). Boxes forget this
+when switched off, so it's needed on every power-up.
 
 ## Build and run
 
