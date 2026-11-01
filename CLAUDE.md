@@ -13,9 +13,13 @@
 
 ```powershell
 .\gradlew.bat assembleDebug                              # build
-.\gradlew.bat installDebug                               # install on the Pixel over USB
+.\gradlew.bat installDebug                               # install "MK Excavator Dev" (….mkexcavator.debug) on the Pixel
 .\gradlew.bat testDebugUnitTest :protocol:test lintDebug # same checks as CI
+.\gradlew.bat assembleRelease                            # signed release APK; key in ~/keystores/mk-excavator
 ```
+
+The release key and its passwords never go in the repo or in chat. The release build is shrunk by
+R8: after adding a library or anything reflective, install the release APK and check it still runs.
 
 Test phone: Pixel 8 Pro, Android 17, connected over USB.
 

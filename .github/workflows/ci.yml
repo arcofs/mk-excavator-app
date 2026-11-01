@@ -23,8 +23,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      # assembleRelease comes out unsigned here (the key isn't on CI) but still proves R8 shrinking works.
       - name: Build, unit tests and lint
-        run: ./gradlew --console=plain assembleDebug testDebugUnitTest :protocol:test lintDebug
+        run: ./gradlew --console=plain assembleDebug assembleRelease testDebugUnitTest :protocol:test lintDebug
 
       - name: Upload lint report
         if: always()

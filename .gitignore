@@ -17,3 +17,7 @@ __pycache__/
 .externalNativeBuild
 .cxx
 local.properties
+# Release signing stays out of the repo, even if copied in by mistake.
+keystore.properties
+*.jks
+*.keystore

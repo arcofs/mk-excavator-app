@@ -1,0 +1,4 @@
+<resources>
+    <!-- Tells a development build apart from the released app in the launcher. -->
+    <string name="app_name">MK Excavator Dev</string>
+</resources>

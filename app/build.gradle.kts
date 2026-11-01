@@ -1,8 +1,21 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
 }
+
+// The release signing key lives outside the repo (README, "Release build"). Without it the release
+// build still works but comes out unsigned, as on CI.
+val signingFile =
+  providers
+    .gradleProperty("mkexcavator.signing")
+    .orElse(providers.systemProperty("user.home").map { "$it/keystores/mk-excavator/keystore.properties" })
+val signing =
+  providers.fileContents(layout.projectDirectory.file(signingFile.get())).asText.orNull?.let { text ->
+    Properties().apply { load(text.reader()) }
+  }
 
 android {
   namespace = "io.github.arcofs.mkexcavator"
@@ -15,10 +28,27 @@ android {
     versionName = "1.0"
   }
 
+  signingConfigs {
+    if (signing != null) {
+      create("release") {
+        storeFile = file(signing.getProperty("storeFile"))
+        storePassword = signing.getProperty("storePassword")
+        keyAlias = signing.getProperty("keyAlias")
+        keyPassword = signing.getProperty("keyPassword")
+      }
+    }
+  }
+
   buildTypes {
+    debug {
+      // A development build installs next to the released app instead of replacing it.
+      applicationIdSuffix = ".debug"
+    }
     release {
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      signingConfig = signingConfigs.findByName("release")
     }
   }
   compileOptions {

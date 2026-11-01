@@ -43,6 +43,31 @@ Android 12 or newer with USB debugging turned on.
 
 On Windows use `.\gradlew.bat` instead of `./gradlew`.
 
+Development builds install as **MK Excavator Dev** (`io.github.arcofs.mkexcavator.debug`), so they
+sit next to the released app instead of replacing it.
+
+### Release build
+
+```bash
+./gradlew assembleRelease   # app/build/outputs/apk/release/app-release.apk
+```
+
+This makes a shrunk APK, signed so it installs on any phone with Android 12 or newer, without
+USB debugging: copy the file over and open it, and Android asks once to allow installs from that
+source. The signing key is kept outside the repo, in `~/keystores/mk-excavator/` (or wherever the
+Gradle property `mkexcavator.signing` points), as `release.jks` plus a `keystore.properties`:
+
+```properties
+storeFile=C:/Users/you/keystores/mk-excavator/release.jks
+storePassword=...
+keyAlias=mk-excavator
+keyPassword=...
+```
+
+Without that file the release build still works but comes out unsigned, as on CI. **Back up both
+files.** Every update must be signed with the same key, or Android won't install it over the app.
+For each new release, raise `versionCode` (and `versionName`) in `app/build.gradle.kts`.
+
 ## Project layout
 
 | Folder | What's in it |
