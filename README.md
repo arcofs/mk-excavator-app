@@ -6,7 +6,8 @@ excavator's 4.0 battery/Bluetooth modules at the same time, from one screen.
 The stock app only drives one module at a time. Both modules listen to the same Bluetooth
 broadcast, and each broadcast has room for three modules, so this app fills in two at once.
 
-**Status:** Phases 0–4 done. The excavator drives and digs from one screen. Protocol notes are
+**Status:** Phases 0–5 done. The excavator drives and digs from one screen, with adjustable
+controls. Protocol notes are
 in [docs/protocol.md](docs/protocol.md). See [docs/ROADMAP.md](docs/ROADMAP.md) for what's next.
 
 ## Using it
@@ -20,7 +21,12 @@ in [docs/protocol.md](docs/protocol.md). See [docs/ROADMAP.md](docs/ROADMAP.md) 
    the right joystick tilts the bucket and moves the boom. As on a real excavator, pushing a
    joystick forward lowers the stick or boom. Speed follows how far you push.
 
-Letting go stops that motor, **STOP** stops everything, and leaving the app disconnects.
+Letting go stops that motor and leaving the app disconnects. **STOP** stops everything and
+latches: tap it again to resume.
+
+**Settings** (button on the drive screen) adjusts the dead zone, how much sideways drift a
+joystick ignores, the speed curve, and each function's top speed and direction. Changes are saved
+on the phone and apply straight away. The test bench is at the bottom of the settings page.
 
 ## Build and run
 

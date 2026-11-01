@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -136,6 +137,100 @@ class MachineControllerTest {
 
     assertEquals(MotorSpeeds.STOPPED, controller.state.value.speeds)
     assertEquals(stopped, radio.last)
+  }
+
+  @Test
+  fun stopLatchesSoAStillHeldControlCannotRestart() = runTest {
+    val controller = controller()
+    controller.connect()
+    advanceTimeBy(MachineController.CONNECT_MS)
+    controller.hold(1, Channel.A, 4)
+
+    controller.stopAll()
+    controller.hold(1, Channel.A, 4)
+
+    assertTrue(controller.state.value.stopped)
+    assertEquals(MotorSpeeds.STOPPED, controller.state.value.speeds)
+    assertEquals(stopped, radio.last)
+  }
+
+  @Test
+  fun afterResumeAControlHeldThroughTheStopMustBeReleasedFirst() = runTest {
+    val controller = controller()
+    controller.connect()
+    advanceTimeBy(MachineController.CONNECT_MS)
+    controller.hold(1, Channel.A, 4)
+    controller.stopAll()
+
+    controller.resume()
+    controller.hold(1, Channel.A, 4)
+    assertFalse(controller.state.value.stopped)
+    assertEquals(MotorSpeeds.STOPPED, controller.state.value.speeds)
+
+    controller.release(1, Channel.A)
+    controller.hold(1, Channel.A, 4)
+    assertEquals(4, controller.state.value.speeds[1, Channel.A])
+  }
+
+  @Test
+  fun aControlPressedDuringTheStopMustAlsoBeReleasedFirst() = runTest {
+    val controller = controller()
+    controller.connect()
+    advanceTimeBy(MachineController.CONNECT_MS)
+    controller.stopAll()
+    controller.hold(2, Channel.C, 5)
+
+    controller.resume()
+    controller.hold(2, Channel.C, 5)
+    assertEquals(MotorSpeeds.STOPPED, controller.state.value.speeds)
+
+    controller.release(2, Channel.C)
+    controller.hold(2, Channel.C, 5)
+    assertEquals(5, controller.state.value.speeds[2, Channel.C])
+  }
+
+  @Test
+  fun controlsUntouchedSinceTheStopWorkStraightAfterResume() = runTest {
+    val controller = controller()
+    controller.connect()
+    advanceTimeBy(MachineController.CONNECT_MS)
+    controller.hold(1, Channel.A, 4)
+    controller.stopAll()
+
+    controller.resume()
+    controller.hold(1, Channel.D, 3)
+
+    assertEquals(3, controller.state.value.speeds[1, Channel.D])
+  }
+
+  @Test
+  fun releaseAllRestsEverythingWithoutLatching() = runTest {
+    val controller = controller()
+    controller.connect()
+    advanceTimeBy(MachineController.CONNECT_MS)
+    controller.hold(1, Channel.A, 4)
+
+    controller.releaseAll()
+    assertFalse(controller.state.value.stopped)
+    assertEquals(MotorSpeeds.STOPPED, controller.state.value.speeds)
+
+    controller.hold(1, Channel.A, 4)
+    controller.hold(1, Channel.D, 3)
+    assertEquals(0, controller.state.value.speeds[1, Channel.A])
+    assertEquals(3, controller.state.value.speeds[1, Channel.D])
+  }
+
+  @Test
+  fun reconnectingClearsTheStop() = runTest {
+    val controller = controller()
+    controller.connect()
+    advanceTimeBy(MachineController.CONNECT_MS)
+    controller.stopAll()
+    controller.disconnect()
+
+    controller.connect()
+
+    assertFalse(controller.state.value.stopped)
   }
 
   @Test

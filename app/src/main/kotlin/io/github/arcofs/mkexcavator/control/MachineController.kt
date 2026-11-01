@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
  * Turns held controls into what the radio broadcasts, and enforces the safety rules:
  * - a control only keeps running while it's refreshed at least every [REFRESH_TIMEOUT_MS];
  * - releasing a control, [stopAll] and [disconnect] bring motors to rest;
+ * - [stopAll] latches until [resume], and a control held through the stop must be released first;
  * - [disconnect] keeps broadcasting "all stopped" for [STOP_FLUSH_MS] before the radio goes off,
  *   so no box is left running on its last command.
  *
@@ -30,12 +31,20 @@ class MachineController(
 ) {
   enum class Link { DISCONNECTED, CONNECTING, READY }
 
-  data class State(val link: Link = Link.DISCONNECTED, val speeds: MotorSpeeds = MotorSpeeds.STOPPED)
+  data class State(
+    val link: Link = Link.DISCONNECTED,
+    val speeds: MotorSpeeds = MotorSpeeds.STOPPED,
+    val stopped: Boolean = false,
+  )
 
   private val _state = MutableStateFlow(State())
   val state: StateFlow<State> = _state.asStateFlow()
 
   private val lastRefresh = mutableMapOf<Pair<Int, Channel>, Long>()
+
+  // Channels held through or during a stop: ignored until released, so STOP can't be undone by a
+  // control that's still being pushed.
+  private val mustRelease = mutableSetOf<Pair<Int, Channel>>()
   private var connectedAt = 0L
   private var watchdog: Job? = null
   private var pendingRadioOff: Job? = null
@@ -44,6 +53,7 @@ class MachineController(
   fun connect() {
     if (_state.value.link != Link.DISCONNECTED) return
     pendingRadioOff?.cancel()
+    mustRelease.clear()
     connectedAt = now()
     update(State(Link.CONNECTING))
     watchdog =
@@ -58,22 +68,44 @@ class MachineController(
   /** Run [channel] of [module] at [speed]. Call again within [REFRESH_TIMEOUT_MS] to keep it running. */
   fun hold(module: Int, channel: Channel, speed: Int) {
     if (_state.value.link == Link.DISCONNECTED) return
-    lastRefresh[module to channel] = now()
+    val key = module to channel
+    if (_state.value.stopped) {
+      mustRelease += key
+      return
+    }
+    if (key in mustRelease) return
+    lastRefresh[key] = now()
     val current = _state.value
     update(current.copy(speeds = current.speeds.with(module, channel, speed)))
   }
 
   fun release(module: Int, channel: Channel) {
     if (_state.value.link == Link.DISCONNECTED) return
+    mustRelease -= module to channel
     lastRefresh.remove(module to channel)
     val current = _state.value
     update(current.copy(speeds = current.speeds.with(module, channel, 0)))
   }
 
+  /** Latched stop: everything to rest, and nothing moves again until [resume]. */
   fun stopAll() {
     if (_state.value.link == Link.DISCONNECTED) return
+    releaseAll()
+    update(_state.value.copy(stopped = true))
+  }
+
+  /** Everything to rest without latching; a control still being held must be released first. */
+  fun releaseAll() {
+    if (_state.value.link == Link.DISCONNECTED) return
+    mustRelease += lastRefresh.keys
     lastRefresh.clear()
     update(_state.value.copy(speeds = MotorSpeeds.STOPPED))
+  }
+
+  /** Undo [stopAll]. A control held through the stop must still be released before it works again. */
+  fun resume() {
+    if (!_state.value.stopped) return
+    update(_state.value.copy(stopped = false))
   }
 
   fun disconnect() {
@@ -81,6 +113,7 @@ class MachineController(
     if (_state.value.link == Link.DISCONNECTED) return
     watchdog?.cancel()
     lastRefresh.clear()
+    mustRelease.clear()
     _state.value = State(Link.DISCONNECTED)
     lastSent = null
     if (wasReady) {

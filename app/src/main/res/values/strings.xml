@@ -7,10 +7,32 @@
     <string name="left_stick_label">Slew ◀ ▶\nStick (push = down)</string>
     <string name="right_stick_label">Bucket ◀ ▶\nBoom (push = down)</string>
     <string name="stop">STOP</string>
+    <string name="stop_latched">STOPPED</string>
+    <string name="stop_resume_hint">tap to resume</string>
+    <string name="status_stopped">Stopped</string>
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
     <string name="swap_boxes">Swap boxes</string>
     <string name="test_bench">Test bench</string>
+    <string name="settings">Settings</string>
+
+    <!-- Settings -->
+    <string name="back">Back</string>
+    <string name="settings_sticks">Sticks and levers</string>
+    <string name="setting_dead_zone">Dead zone</string>
+    <string name="setting_dead_zone_help">How far a stick or lever has to move before anything happens.</string>
+    <string name="setting_snap">Axis snap</string>
+    <string name="setting_snap_help">Sideways drift within this angle of straight ahead is ignored, and the other way round, so pushing the stick doesn\'t also slew. 0° turns it off.</string>
+    <string name="setting_curve">Speed curve</string>
+    <string name="setting_curve_help">1.0: speed rises evenly with the push. Higher: finer control at slow speeds. Full push is always top speed.</string>
+    <string name="settings_functions">Top speed and direction</string>
+    <string name="settings_functions_help">Top speed at full push for each function, and Reverse to swap its direction.</string>
+    <string name="setting_reverse">Reverse</string>
+    <string name="settings_reset">Reset to defaults</string>
+    <string name="function_slew">Slew</string>
+    <string name="function_stick">Stick</string>
+    <string name="function_boom">Boom</string>
+    <string name="function_bucket">Bucket</string>
     <string name="status_disconnected">Not connected</string>
     <string name="status_connecting">Connecting…</string>
     <string name="status_ready">Ready</string>

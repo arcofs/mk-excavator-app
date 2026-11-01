@@ -18,7 +18,8 @@ class DebugViewModel(private val controller: MachineController, radioState: Stat
 
   fun release(drives: List<Drive>) = drives.forEach { controller.release(it.module, it.channel) }
 
-  fun stopAll() = controller.stopAll()
+  /** STOP latches; the same button resumes. */
+  fun onStopButton() = if (controller.state.value.stopped) controller.resume() else controller.stopAll()
 }
 
 /** One motor to run while a button is held: [direction] is +1 or -1, scaled by the chosen speed. */

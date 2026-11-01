@@ -6,6 +6,7 @@ import io.github.arcofs.mkexcavator.control.MachineController
 import io.github.arcofs.mkexcavator.control.MachineController.Link
 import io.github.arcofs.mkexcavator.protocol.Channel
 import io.github.arcofs.mkexcavator.protocol.MotorSpeeds
+import io.github.arcofs.mkexcavator.settings.FakeSettingsRepository
 import io.github.arcofs.mkexcavator.ui.drive.DriveViewModel.GuideStep
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,6 +28,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class DriveViewModelTest {
   private val radio = FakeRadio()
+  private val settings = FakeSettingsRepository()
 
   @Before
   fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -36,7 +38,7 @@ class DriveViewModelTest {
 
   private fun TestScope.setUp(): Pair<DriveViewModel, MachineController> {
     val machine = MachineController(radio, backgroundScope) { testScheduler.currentTime }
-    return DriveViewModel(machine) to machine
+    return DriveViewModel(machine, settings) to machine
   }
 
   private fun TestScope.connectThroughGuide(viewModel: DriveViewModel) {
@@ -126,5 +128,49 @@ class DriveViewModelTest {
 
     assertNull(viewModel.state.value.guide)
     assertFalse(viewModel.state.value.canDrive)
+  }
+
+  @Test
+  fun stopLatchesAndLocksTheControlsUntilTappedAgain() = runTest {
+    val (viewModel, machine) = setUp()
+    connectThroughGuide(viewModel)
+    viewModel.finishGuide(armBoxPressed = false)
+    viewModel.move(ExcavatorFunction.BOOM, 1f)
+
+    viewModel.onStopButton()
+    assertTrue(viewModel.state.value.stopped)
+    assertFalse(viewModel.state.value.canDrive)
+    viewModel.move(ExcavatorFunction.BOOM, 1f)
+    assertEquals(MotorSpeeds.STOPPED, machine.state.value.speeds)
+
+    viewModel.onStopButton()
+    assertFalse(viewModel.state.value.stopped)
+    viewModel.release(ExcavatorFunction.BOOM)
+    viewModel.move(ExcavatorFunction.BOOM, 1f)
+    assertEquals(7, machine.state.value.speeds[1, Channel.D])
+  }
+
+  @Test
+  fun savedSettingsApplyToTheControls() = runTest {
+    val (viewModel, machine) = setUp()
+    connectThroughGuide(viewModel)
+    viewModel.finishGuide(armBoxPressed = false)
+
+    settings.update { it.copy(maxSpeeds = it.maxSpeeds + (ExcavatorFunction.BOOM to 2), reversed = setOf(ExcavatorFunction.BOOM)) }
+    viewModel.move(ExcavatorFunction.BOOM, 1f)
+
+    assertEquals(-2, machine.state.value.speeds[1, Channel.D])
+  }
+
+  @Test
+  fun aJoystickIgnoresSidewaysDrift() = runTest {
+    val (viewModel, machine) = setUp()
+    connectThroughGuide(viewModel)
+    viewModel.finishGuide(armBoxPressed = false)
+
+    viewModel.moveStick(ExcavatorFunction.BUCKET, ExcavatorFunction.BOOM, x = 0.2f, y = 1f)
+
+    assertEquals(0, machine.state.value.speeds[1, Channel.A])
+    assertEquals(7, machine.state.value.speeds[1, Channel.D])
   }
 }

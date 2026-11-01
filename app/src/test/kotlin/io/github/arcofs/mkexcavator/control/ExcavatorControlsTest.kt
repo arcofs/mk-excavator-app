@@ -11,9 +11,12 @@ import io.github.arcofs.mkexcavator.protocol.MotorSpeeds
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ExcavatorControlsTest {
+  private val deadZone = ControlSettings.DEFAULT_DEAD_ZONE
+
   private fun TestScope.connected(): Pair<ExcavatorControls, MachineController> {
     val machine = MachineController(FakeRadio(), backgroundScope) { testScheduler.currentTime }
     machine.connect()
@@ -23,14 +26,14 @@ class ExcavatorControlsTest {
   @Test
   fun deadZoneIsStopped() {
     assertEquals(0, ExcavatorControls.speedFor(0f))
-    assertEquals(0, ExcavatorControls.speedFor(ExcavatorControls.DEAD_ZONE * 0.9f))
-    assertEquals(0, ExcavatorControls.speedFor(-ExcavatorControls.DEAD_ZONE * 0.9f))
+    assertEquals(0, ExcavatorControls.speedFor(deadZone * 0.9f))
+    assertEquals(0, ExcavatorControls.speedFor(-deadZone * 0.9f))
   }
 
   @Test
   fun justPastTheDeadZoneIsTheSlowestSpeed() {
-    assertEquals(1, ExcavatorControls.speedFor(ExcavatorControls.DEAD_ZONE + 0.01f))
-    assertEquals(-1, ExcavatorControls.speedFor(-ExcavatorControls.DEAD_ZONE - 0.01f))
+    assertEquals(1, ExcavatorControls.speedFor(deadZone + 0.01f))
+    assertEquals(-1, ExcavatorControls.speedFor(-deadZone - 0.01f))
   }
 
   @Test
@@ -47,6 +50,24 @@ class ExcavatorControlsTest {
   }
 
   @Test
+  fun halfTravelGivesLessThanHalfSpeedForFinerControl() {
+    val halfTravel = deadZone + (1f - deadZone) / 2
+    assertTrue(ExcavatorControls.speedFor(halfTravel) < MotorSpeeds.MAX_SPEED / 2f)
+  }
+
+  @Test
+  fun aLinearCurveGivesHalfSpeedAtHalfTravel() {
+    val halfTravel = deadZone + (1f - deadZone) / 2
+    assertEquals(4, ExcavatorControls.speedFor(halfTravel, curve = 1f))
+  }
+
+  @Test
+  fun aWiderDeadZoneNeedsMoreDeflection() {
+    assertEquals(0, ExcavatorControls.speedFor(0.25f, deadZone = 0.3f))
+    assertEquals(1, ExcavatorControls.speedFor(0.32f, deadZone = 0.3f))
+  }
+
+  @Test
   fun eachFunctionDrivesItsBoxAndChannel() = runTest {
     val (controls, machine) = connected()
     val expected =
@@ -55,7 +76,7 @@ class ExcavatorControlsTest {
         RIGHT_TRACK to Triple(2, Channel.A, 7),
         BUCKET to Triple(1, Channel.A, 7),
         STICK to Triple(1, Channel.B, -7),
-        SLEW to Triple(1, Channel.C, -7),
+        SLEW to Triple(1, Channel.C, -ControlSettings.DEFAULT_SLEW_MAX_SPEED),
         BOOM to Triple(1, Channel.D, 7),
       )
     for ((function, target) in expected) {
@@ -90,12 +111,35 @@ class ExcavatorControlsTest {
   }
 
   @Test
-  fun maxSpeedCapsFullDeflection() = runTest {
+  fun eachFunctionUsesItsOwnTopSpeed() = runTest {
     val (controls, machine) = connected()
-    controls.maxSpeed = 3
+    controls.settings = ControlSettings(maxSpeeds = mapOf(LEFT_TRACK to 3))
 
     controls.drive(LEFT_TRACK, -1f)
 
     assertEquals(-3, machine.state.value.speeds[2, Channel.C])
+  }
+
+  @Test
+  fun aReversedFunctionDrivesTheOtherWay() = runTest {
+    val (controls, machine) = connected()
+    controls.settings = ControlSettings(reversed = setOf(BUCKET))
+
+    controls.drive(BUCKET, 1f)
+
+    assertEquals(-7, machine.state.value.speeds[1, Channel.A])
+  }
+
+  @Test
+  fun theStickSnapsDriftUsingTheSnapSetting() = runTest {
+    val (controls, machine) = connected()
+
+    controls.driveStick(SLEW, STICK, x = 0.3f, y = 1f)
+    assertEquals(0, machine.state.value.speeds[1, Channel.C])
+    assertEquals(-7, machine.state.value.speeds[1, Channel.B])
+
+    controls.settings = ControlSettings(snapDegrees = 0f)
+    controls.driveStick(SLEW, STICK, x = 0.3f, y = 1f)
+    assertTrue(machine.state.value.speeds[1, Channel.C] != 0)
   }
 }

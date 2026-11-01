@@ -92,7 +92,7 @@ fun DebugScreen(modifier: Modifier = Modifier) {
     onDisconnect = viewModel::disconnect,
     onHold = { drives -> viewModel.hold(drives, speed) },
     onRelease = viewModel::release,
-    onStop = viewModel::stopAll,
+    onStop = viewModel::onStopButton,
     modifier = modifier,
   )
 }
@@ -150,7 +150,7 @@ internal fun DebugScreen(
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
         modifier = Modifier.fillMaxWidth().height(72.dp).padding(bottom = 16.dp),
       ) {
-        Text("STOP", style = MaterialTheme.typography.headlineMedium)
+        Text(if (machine.stopped) "STOPPED: tap to resume" else "STOP", style = MaterialTheme.typography.headlineMedium)
       }
     }
   }

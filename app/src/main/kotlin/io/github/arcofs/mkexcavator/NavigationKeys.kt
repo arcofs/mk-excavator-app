@@ -5,4 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object Drive : NavKey
 
+@Serializable data object Settings : NavKey
+
 @Serializable data object TestBench : NavKey

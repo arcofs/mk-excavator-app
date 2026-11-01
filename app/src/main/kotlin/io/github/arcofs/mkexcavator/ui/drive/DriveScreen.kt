@@ -1,6 +1,12 @@
 package io.github.arcofs.mkexcavator.ui.drive
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +16,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -26,8 +33,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,9 +55,9 @@ import io.github.arcofs.mkexcavator.ui.rememberWithAdvertisePermission
 import io.github.arcofs.mkexcavator.ui.theme.MKExcavatorTheme
 
 @Composable
-fun DriveScreen(onOpenTestBench: () -> Unit, modifier: Modifier = Modifier) {
+fun DriveScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
   val app = LocalContext.current.applicationContext as MkExcavatorApp
-  val viewModel: DriveViewModel = viewModel { DriveViewModel(app.machine) }
+  val viewModel: DriveViewModel = viewModel { DriveViewModel(app.machine, app.settings) }
   val state by viewModel.state.collectAsStateWithLifecycle()
   val connect = rememberWithAdvertisePermission(viewModel::connect)
 
@@ -57,10 +67,11 @@ fun DriveScreen(onOpenTestBench: () -> Unit, modifier: Modifier = Modifier) {
     onConnect = viewModel::openGuide,
     onDisconnect = viewModel::disconnect,
     onMove = viewModel::move,
+    onMoveStick = viewModel::moveStick,
     onRelease = viewModel::release,
-    onStop = viewModel::stopAll,
+    onStop = viewModel::onStopButton,
     onSwap = viewModel::toggleSwap,
-    onOpenTestBench = onOpenTestBench,
+    onOpenSettings = onOpenSettings,
     modifier = modifier,
   )
   state.guide?.let { step ->
@@ -84,10 +95,11 @@ internal fun DriveScreen(
   onConnect: () -> Unit,
   onDisconnect: () -> Unit,
   onMove: (ExcavatorFunction, Float) -> Unit,
+  onMoveStick: (horizontal: ExcavatorFunction, vertical: ExcavatorFunction, x: Float, y: Float) -> Unit,
   onRelease: (ExcavatorFunction) -> Unit,
   onStop: () -> Unit,
   onSwap: () -> Unit,
-  onOpenTestBench: () -> Unit,
+  onOpenSettings: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val enabled = state.canDrive
@@ -98,33 +110,67 @@ internal fun DriveScreen(
   ) {
     Lever(R.string.left_track, ExcavatorFunction.LEFT_TRACK, enabled, onMove, onRelease)
     // As on a real excavator, pushing a joystick forward lowers the stick or boom; pulling back raises it.
-    Joystick(R.string.left_stick_label, ExcavatorFunction.SLEW, ExcavatorFunction.STICK, enabled, onMove, onRelease, verticalSign = -1f)
+    Joystick(R.string.left_stick_label, ExcavatorFunction.SLEW, ExcavatorFunction.STICK, enabled, onMoveStick, onRelease, verticalSign = -1f)
     Column(
       modifier = Modifier.weight(0.2f).fillMaxHeight(),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
     ) {
       Status(state)
-      Button(
-        onClick = onStop,
-        shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-        modifier = Modifier.size(104.dp),
-      ) {
-        Text(stringResource(R.string.stop), style = MaterialTheme.typography.titleLarge)
-      }
+      StopButton(stopped = state.stopped, onClick = onStop)
       if (state.link == Link.DISCONNECTED) {
         Button(onClick = onConnect) { Text(stringResource(R.string.connect)) }
       } else {
         OutlinedButton(onClick = onDisconnect) { Text(stringResource(R.string.disconnect)) }
       }
       TextButton(onClick = onSwap, enabled = enabled) { Text(stringResource(R.string.swap_boxes)) }
-      TextButton(onClick = onOpenTestBench) { Text(stringResource(R.string.test_bench)) }
+      TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
     }
-    Joystick(R.string.right_stick_label, ExcavatorFunction.BUCKET, ExcavatorFunction.BOOM, enabled, onMove, onRelease, verticalSign = -1f)
+    Joystick(R.string.right_stick_label, ExcavatorFunction.BUCKET, ExcavatorFunction.BOOM, enabled, onMoveStick, onRelease, verticalSign = -1f)
     Lever(R.string.right_track, ExcavatorFunction.RIGHT_TRACK, enabled, onMove, onRelease)
   }
 }
+
+/** Red STOP; once pressed it latches and turns into a pulsing amber "STOPPED, tap to resume". */
+@Composable
+private fun StopButton(stopped: Boolean, onClick: () -> Unit) {
+  if (stopped) {
+    val pulse by
+      rememberInfiniteTransition(label = "stopped")
+        .animateFloat(1f, 1.08f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "stopped")
+    Button(
+      onClick = onClick,
+      shape = CircleShape,
+      colors = ButtonDefaults.buttonColors(containerColor = LATCHED_AMBER, contentColor = Color.Black),
+      contentPadding = PaddingValues(4.dp),
+      modifier =
+        Modifier.size(STOP_SIZE)
+          .graphicsLayer {
+            scaleX = pulse
+            scaleY = pulse
+          }
+          .border(4.dp, MaterialTheme.colorScheme.error, CircleShape),
+    ) {
+      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(stringResource(R.string.stop_latched), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.stop_resume_hint), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
+      }
+    }
+  } else {
+    Button(
+      onClick = onClick,
+      shape = CircleShape,
+      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+      contentPadding = PaddingValues(4.dp),
+      modifier = Modifier.size(STOP_SIZE),
+    ) {
+      Text(stringResource(R.string.stop), style = MaterialTheme.typography.titleLarge)
+    }
+  }
+}
+
+private val STOP_SIZE = 112.dp
+private val LATCHED_AMBER = Color(0xFFFFB300)
 
 @Composable
 private fun ColumnScope.Status(state: UiState) {
@@ -133,6 +179,7 @@ private fun ColumnScope.Status(state: UiState) {
       state.link == Link.DISCONNECTED -> R.string.status_disconnected
       state.link == Link.CONNECTING -> R.string.status_connecting
       state.guide != null -> R.string.status_setting_up
+      state.stopped -> R.string.status_stopped
       else -> R.string.status_ready
     }
   Text(stringResource(status), style = MaterialTheme.typography.titleMedium)
@@ -171,7 +218,7 @@ private fun RowScope.Joystick(
   horizontal: ExcavatorFunction,
   vertical: ExcavatorFunction,
   enabled: Boolean,
-  onMove: (ExcavatorFunction, Float) -> Unit,
+  onMoveStick: (horizontal: ExcavatorFunction, vertical: ExcavatorFunction, x: Float, y: Float) -> Unit,
   onRelease: (ExcavatorFunction) -> Unit,
   verticalSign: Float = 1f,
 ) {
@@ -181,10 +228,7 @@ private fun RowScope.Joystick(
       ControlStick(
         twoAxes = true,
         enabled = enabled,
-        onMove = { x, y ->
-          onMove(horizontal, x)
-          onMove(vertical, y * verticalSign)
-        },
+        onMove = { x, y -> onMoveStick(horizontal, vertical, x, y * verticalSign) },
         onRelease = {
           onRelease(horizontal)
           onRelease(vertical)
@@ -216,10 +260,11 @@ private fun DriveScreenPreview() {
       onConnect = {},
       onDisconnect = {},
       onMove = { _, _ -> },
+      onMoveStick = { _, _, _, _ -> },
       onRelease = {},
       onStop = {},
       onSwap = {},
-      onOpenTestBench = {},
+      onOpenSettings = {},
     )
   }
 }
