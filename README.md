@@ -217,6 +217,11 @@ only install over an app signed with the same key. Raise `versionCode` and `vers
 
 Both licence texts ship in the app, in `app/src/main/assets/licenses/`.
 
+## Licence
+
+[MIT](LICENSE). Third-party parts keep their own licences: the Barlow font and Material Symbols
+icons (see Credits) and the Gradle wrapper (Apache License 2.0).
+
 ## Disclaimer
 
 Independent hobby project, not affiliated with or endorsed by Mould King. "Mould King" and
