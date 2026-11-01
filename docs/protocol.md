@@ -158,5 +158,10 @@ bucket plus right track from **one message** carrying Module 1 A and Module 2 A.
 - Channels never captured or driven: Module 2's B and D, and Module 3's B, C and D. They follow
   the same layout and checksum, so they should work.
 - How long the connect message must be sent, and whether a box can join later.
-- What a box does when messages stop: does it hold its last command or stop? This matters for
-  the safety rules.
+
+## When the broadcast stops
+
+Tested 2026-11-01. With the right track running, the app was force-closed with no "all stopped"
+message, as in a crash. The broadcast stopped (confirmed on the PC) and **the track stopped
+straight away**. A box doesn't keep running its last command once it stops hearing messages, so
+an app crash, a flat phone or going out of range all fail safe.

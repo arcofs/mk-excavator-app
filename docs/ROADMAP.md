@@ -16,3 +16,5 @@
 - If the app goes to the background or the screen locks, every motor goes neutral and the broadcast stops.
 - A STOP button is always visible.
 - A watchdog returns any motor to neutral if it hasn't been refreshed recently.
+- Backstop in the hardware: a box stops its motors as soon as the broadcast stops (tested by
+  force-closing the app mid-drive; see `docs/protocol.md`).
