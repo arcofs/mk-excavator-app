@@ -5,8 +5,12 @@ heard live from a Windows PC with `tools/ble_sniff.py` on 2026-11-01, with the 1
 battery boxes powered on and watched while each control was used. The captured messages are in
 [`protocol/src/test/resources/mktech-2026-11-01.txt`](../protocol/src/test/resources/mktech-2026-11-01.txt).
 
-Status: the layout and channel map are **confirmed on the machine**. How the bytes are scrambled
-and checksummed is a **working hypothesis** that Phase 2 has to prove by reproducing every capture.
+Status:
+- The layout and channel map are **confirmed on the machine**.
+- The checksum is **identified**. `Mk4Message` in `:protocol` reproduces every captured message
+  byte for byte, and its tests check that.
+- Still to confirm on the machine (Phase 3): channels we never captured, such as Module 2's C,
+  and the speed each value actually gives.
 
 ## Transport
 
@@ -45,14 +49,13 @@ at the top of its screen and leaves the others at rest, but nothing in the forma
 driving Module 1 and Module 2 in the same message. That's how this app drives the tracks and
 the arm at the same time.
 
-## Channel values (working hypothesis)
+## Channel values
 
-Moving one stick changes only that channel's nibble plus the checksum. So the scrambling is
-applied position by position (consistent with XOR against a fixed keystream) and doesn't spread
-changes across bytes.
+Moving one stick changes only that channel's nibble plus the checksum. So the scrambling is a
+fixed XOR applied position by position, and it doesn't spread changes across bytes.
 
-If the scrambled nibble is XORed with a fixed per-nibble key, and a channel at rest is `0x8`, then
-slowly pushing a stick decodes to steadily rising values:
+Reading each scrambled nibble as XORed with a fixed per-nibble key, with a channel at rest as
+`0x8`, slowly pushing a stick decodes to steadily rising values:
 
 | MK Tech stick | Decoded nibble | Meaning |
 |---|---|---|
@@ -71,9 +74,31 @@ The per-nibble keys implied by that reading, from the idle message:
 | 2 | `F` | `A` | `2` | `A` |
 | 3 | `B` | `4` | `E` | `7` |
 
-Phase 2 settles the open part: which raw value means "at rest" (`0x8`, or `0x0` with keys that
-differ by 8), the exact keystream, and the checksum algorithm. A correct answer reproduces every
-captured message byte for byte.
+We don't need to know the box's own idea of "at rest" (`0x8`, or `0x0` with keys that differ by 8).
+`Mk4Message` starts from MK Tech's idle message and flips only the bits that differ from a stopped
+channel, so it sends exactly what MK Tech sends for the same stick position either way.
+
+The speed numbers are our reading of the nibble, ordered by how far the stick was pushed. Phase 3
+checks that higher numbers really do drive the motors faster.
+
+## Checksum
+
+Bytes 18–19 are **CRC-16/KERMIT** (polynomial `0x1021` reflected, init 0, no final XOR) of bytes
+8–17, little-endian, then XORed with `ba c4`:
+
+```
+byte 18 = (crc & 0xff) ^ 0xba
+byte 19 = (crc >> 8)   ^ 0xc4
+```
+
+How it was found: scrambling is a fixed XOR, so a CRC's change depends only on the content's
+change. `tools/derive_checksum.py` tried every 16-bit polynomial with both bit orders and both
+byte orders against the 21 control captures. **Exactly one combination predicts every checksum
+change.** The constant `ba c4` comes from the idle message. It absorbs what the CRC also covers
+but we never see (the start of the packet) and the scrambling of the checksum bytes. With it, the
+formula reproduces all 22 captured control messages.
+
+The connect message has no adjustable content, so it's sent exactly as captured.
 
 ## Module numbers
 
@@ -116,8 +141,8 @@ seen in MK Tech before the track box was moved to Module 2.
 
 ## Open questions
 
-- Exact keystream and checksum. Phase 2 must reproduce all the captured messages.
-- The raw value for "at rest" (`0x8` vs `0x0`).
+- Channels we never captured (Module 2's B, C and D, and Module 3's B, C and D). They follow the
+  same layout and checksum, so they should work, but they still need confirming on the machine.
 - How long the connect message must be sent, and whether a box can join later.
 - What a box does when messages stop: does it hold its last command or stop? This matters for
   the safety rules.
